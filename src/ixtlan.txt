@@ -269,8 +269,8 @@ megtanultunk valóságnak nevezni''.
 Állítom, hogy mindezeket a lépéseket csakis annak a leírásnak a rendszerében
 ismerhetjük meg, amelybe tartoznak. Mivel don Juan kezdettől fogva arra
 törekedett, hogy ezt a leírást átadja nekem, csakis tanítása lehet e leírás
-egyetlen kapuja. Így hát hagyom érvényesülni don Juan szavait.\\
-{RIGHT Carlos Castañeda}
+egyetlen kapuja. Így hát hagyom érvényesülni don Juan szavait.
+{RIGHT Carlos Castañeda 1972.}
 
 {PART ELSŐ RÉSZ :: ,,A világ megállítása''}
 
@@ -10072,7 +10072,7 @@ Don Juan magyarázata valóságos katalizátorként hatott rám: don Genaro
 történetének teljes hatása akkor taglózott csak le, amikor saját életemhez
 kezdtem kapcsolni történetét.
 
--- Mi lesz azokkal, akiket szeretek? -- kérdeztem don Juantól. -- Mitörténik
+-- Mi lesz azokkal, akiket szeretek? -- kérdeztem don Juantól. -- Mi történik
 majd velük?
 
 -- Mind hátramaradnak -- felelte.
