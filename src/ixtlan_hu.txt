@@ -2,7 +2,60 @@
 {CÍM Ixtláni utazás}
 {ALCÍM Don Juan újabb tanításai}
 
-{BEVEZETŐ BEVEZETÉS}
+{COPYRIGHT A fordítás az alábbi kiadás alapján készült: \\
+CARLOS CASTAÑEDA: JOURNEY TO IXTLAN: \\
+The Lessons of Don Juan \\
+Washington Square Press, a division of Simon & Schuster Inc. \\
+1230 Avenue of the Americas, New York, NY 10020 \\
+\\
+Fordította: NAGY ÁLMOS \\
+Szerkesztette: DOBI ILDIKÓ \\
+\\
+Copyright © Carlos Castañeda 1972 \\
+Hungarian translation © Nagy Álmos 1996 \\
+Hungarian edition © Sweetwater Publisher Establishment 1997 \\
+Cover design © Sweetwater Publisher Establishment 1997 \\
+\\
+ÉDESVÍZ KIADÓ BUDAPEST \\
+Felelős kiadó: a kiadó igazgatója \\
+Tipográfia: Szücs Bt. Dunakeszi \\
+Nyomta: Alföldi Nyomda Rt., Debrecen \\
+Felelős vezető: György Géza vezérigazgató}
+
+{ELŐSZÓ A KIADÓ ELŐSZAVA}
+
+Megszülettünk, s e fájdalmasan gyönyörűséges nap óta szüntelenül bizonygatják:
+-- lásd ilyen és ilyen a világ! Életkorunkhoz, értelmünkhöz igazodva váltig
+mesélik, miként is történnek a dolgok valójában...
+
+-- Óh, mennyire szeretnénk csillogó szemmel hallgatni rájuk! Milyen egyszerű
+volna minden, ha létezne biztos recept, mindentmagyarázó, könnyed, eleven
+életmodell. Felnőttként is kézen fognánk bárkit, ha e mozdulattal elkerülhetnénk
+a felelősségvállalás, a jelenben élés, a szellemi fejlődés fájdalmas útját. Az
+utazás Ixtlánba, mint kiderül örökké tart, mert nem más, mint a boldogság
+eléréséhez nélkülözhetetlen bátor őszinte élet.
+
+Különös lélek Don Juan, a tolték varázsló. Azok közé a higgadt, ambícióktól
+mentes öregek közé tartozik, akik örömüket abból merítik, hogy teret teremtenek
+ifjú tanítványaik lelki önmegvalósításához. Mert más a mestert utánozni, és más
+hozzáállását, példáját elsajátítva, markáns egyéniségként, saját életünkben
+sikeressé válni. Az örök utazásnak, ami egyben az örök megérkezés, hol megható,
+hol félelmetes, hol megvető, ám elejétől a végéig, igézően tanulságos példázata
+e könyv.
+
+{HÍRDETÉS KEDVES OLVASÓ!}
+
+{KIEM Talán megkönnyíti a lelki-szellemi élet témaköréhez, vagy a természetes
+gyógymódokhoz vonzódó Olvasóink tájékozódását a kötet végén található, egyre
+bővülő ÉDESVÍZ MINTABOLTOK ORSZÁGOS HÁLÓZATÁNAK címjegyzéke, ahol immár
+személyesen is kedvezménnyel vásárolhat. Keresse fel a lakóhelyéhez legközelebb
+eső mintaboltunkat, itt a korábbi könyveink gazdag választéka mellett egyéb
+ezoterikus kiegészítőkből (zene- és videokazetták, tarot, gyógyító kristályok,
+ingát, különös jelentést hordozó amulettek, biokozmetikumok, stb.) is kedvére
+válogathat.}
+{JOBBRA {KIEM A Kiadó.}}
+
+{BEVEZETÉS BEVEZETÉS}
 
 1971. május 22-én, szombaton Mexikó egyik államába, Sonorába utaztam, hogy don
 Juan Matussal, a jaki indián varázslóval találkozzam, akivel 1961 óta
@@ -9700,7 +9753,7 @@ megtesszük, jön is.
 -- Nem taníthattál volna meg {KIEM látni} anélkül, hogy a szövetségest
 megidéznénk?
 
--- Nem. A {KIEM látához} meg kell tanulnunk másképpen szemlélni a világot, s az
+-- Nem. A {KIEM látáshoz} meg kell tanulnunk másképpen szemlélni a világot, s az
 egyetlen mód, amit ismerek, az a varázsló módja.
 
 {FEJEZET HUSZADIK FEJEZET :: Ixtláni utazás}
@@ -10072,7 +10125,7 @@ Don Juan magyarázata valóságos katalizátorként hatott rám: don Genaro
 történetének teljes hatása akkor taglózott csak le, amikor saját életemhez
 kezdtem kapcsolni történetét.
 
--- Mi lesz azokkal, akiket szeretek? -- kérdeztem don Juantól. -- Mitörténik
+-- Mi lesz azokkal, akiket szeretek? -- kérdeztem don Juantól. -- Mi történik
 majd velük?
 
 -- Mind hátramaradnak -- felelte.

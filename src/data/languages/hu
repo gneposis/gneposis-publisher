@@ -2,11 +2,15 @@ author: SZERZŐ
 chapter: FEJEZET
 emph: KIEM
 footnote: LÁBJEGYZET
-intro: BEVEZETŐ
+intro: BEVEZETÉS
 paragraph: PARAGRAFUS
 part: RÉSZ
 right: JOBBRA
 subtitle: ALCÍM
 title: CÍM
 verse: VERS
-notes: JEGYZETEK
+Notes: JEGYZETEK
+announcement: HÍRDETÉS
+foreword: ELŐSZÓ
+Toc: TARTALOM
+copyright: COPYRIGHT

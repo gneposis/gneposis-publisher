@@ -9700,7 +9700,7 @@ megtesszük, jön is.
 -- Nem taníthattál volna meg {EMPH látni} anélkül, hogy a szövetségest
 megidéznénk?
 
--- Nem. A {EMPH látához} meg kell tanulnunk másképpen szemlélni a világot, s az
+-- Nem. A {EMPH látáshoz} meg kell tanulnunk másképpen szemlélni a világot, s az
 egyetlen mód, amit ismerek, az a varázsló módja.
 
 {CHAPTER HUSZADIK FEJEZET :: Ixtláni utazás}
