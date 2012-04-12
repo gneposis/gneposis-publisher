@@ -9,4 +9,11 @@ right: RIGHT
 subtitle: SUBTITLE
 title: TITLE
 verse: VERSE
-notes: NOTES
+Notes: NOTES
+announcement: ANNOUNCEMENT
+foreword: FOREWORD
+Toc: TABLE OF CONTENTS
+copyright: COPYRIGHT
+date: DATE
+description: DESCRIPTION
+isbn: ISBN
