@@ -2,6 +2,12 @@
 Created on Apr 2, 2012
 
 @author: adam szieberth
+
+This program is free software. It comes without any warranty, to
+the extent permitted by applicable law. You can redistribute it
+and/or modify it under the terms of the Do What The Fuck You Want
+To Public License, Version 2, as published by Sam Hocevar. See
+http://sam.zoy.org/wtfpl/COPYING for more details.
 '''
 
 import os
@@ -16,8 +22,28 @@ parser = OptionParser()
 parser.add_option('-f', '--file', action='store', type='string', dest='filename')
 (options, args) = parser.parse_args()
 
+gp_path=os.path.abspath(os.path.split(sys.argv[0])[0])
+file_path=os.path.split(options.filename)[0]
+file_name=os.path.split(options.filename)[1]
+mode='kindle'
 
-metas = ('title', 'subtitle', 'copyright', 'date', 'description', 'isbn')
+
+
+# Code: http://stackoverflow.com/questions/273192/python-best-way-to-create-directory-if-it-doesnt-exist-for-file-write
+def ensure_dir(f):
+    ''' Creates directory for output file if not exits
+    
+    If the input file is on the desktop, the output files will be located in ~/Desktop/kindle
+    '''
+    if not os.path.exists(f):
+        os.makedirs(f)
+
+def out_path():
+    ''' Returns the path of output directory '''
+    path = file_path+'/'+mode
+    ensure_dir(path)
+    return path
+
 structs = ('part', 'chapter', 'intro', 'foreword')
 depth = {'part': 1, 'chapter': 2, 'intro': 0, 'foreword': 'foreword'}
 
@@ -36,8 +62,9 @@ def md5sum(filename):
 ####
 
 def dictionary():
+    ''' Creates the dictionary of statements based on the statement files in <gp.py_path>/data/languages/statements/'''
     dictionary = {}
-    for dict_file in glob.glob('data/languages/*'):
+    for dict_file in glob.glob(gp_path+'/data/languages/statements/*'):
         path_split = os.path.split(dict_file)
         lang = path_split[1]
         dictionary[lang] = {}
@@ -51,10 +78,11 @@ def dictionary():
     return dictionary
 
 def language():
+    ''' Determine the language of the gneposis document and returns 'en' of 'hu' for example. '''
     with open(options.filename, encoding='utf-8') as a_file:
         a_file.seek(0)
         first_line = a_file.readline()
-        key = re.split('\W+?', first_line)[1]
+        key = re.split(r'[\W]+', first_line)[1]
         for language in dictionary():
             if dictionary()[language]['author'] == key or dictionary()[language]['title'] == key:
                 return language
@@ -85,29 +113,77 @@ def utfize(gp):
     return gp
 
 def meta(gp):
-    def get_language():
-        if language() == 'default':
-            lang='en'
-        else:
-            lang=language()
-        return lang
-    def get_author():
-        p1 = re.compile(r'{'+dictionary()[language()]['author']+' (?P<c>.+?)}', re.S)
-        m1 = p1.search(gp)
+    ''' Get metadata from modified gneposis data file '''   
+    def get_required():
+        ''' Get required metadata using the reqstatements tuple
+        
+        An author declaration must look like:
+        {<AUTHOR> <name> :: <sort_name>}
+        
+        For example (by language):
+        en: {AUTHOR Jane Austen :: Austen, Jane}
+        en: {AUTHOR Carlos Castañeda :: Castañeda, Carlos}
+        hu: {SZERZŐ Gárdonyi Géza :: Gárdonyi, Géza}
+        
+        A title (and the optional subtitle) declaration must look like:
+        {<TITLE> <title>[ :: <subtitle>]}
+        
+        For example (by language):
+        en {TITLE Pride and Prejudice}
+        en {TITLE Journey to Ixtlan :: The Lessons of Don Juan}
+        hu {CÍM Egri csillagok}
+        '''
+        reqstatements = ('author', 'title')
         d = {}
-        if m1:
-            p2 = re.compile(r'(?P<author>.+?)\s::\s(?P<sortauthor>.+?)$')
-            m2 = p2.search(m1.group('c'))
-            d['author']=m2.group('author')
-            d['sortauthor']=m2.group('sortauthor')
+        for s in reqstatements:
+            p1 = re.compile(r'{'+dictionary()[language()][s]+' (?P<_'+s+'_>.+?)}', re.S)
+            m1 = p1.search(gp)
+            if m1:
+                p2 = re.compile(r'(?P<'+s+'>.+?)\s::\s(?P<'+s+'_2>.+?)$')
+                m2 = p2.search(m1.group('_'+s+'_'))
+                if m2:
+                    d[s]=m2.group(s)
+                    d[s+'_2']=m2.group(s+'_2')
+                else:
+                    d[s]=m1.group('_'+s+'_')
+            else:
+                raise Warning('Missing statement: '+s)
         return d
-    meta = {}
-    for m in metas:
-        p = re.compile(r'{'+dictionary()[language()][m]+' (?P<'+m+'>.+?)}', re.S)
-        s = p.search(gp)
-        meta[m] = s.group(m)
-    meta=dict(list(meta.items()) + list(get_author().items()))
-    meta['language']=get_language()
+    def get_optional():
+        ''' Get optional metadata using the optstatements tuple
+        
+        The copyright statement is for the contents of the copyright page.
+        You can use \\ to make linebreaks inside. Watch the "}" at the end of the
+        declaration:
+        {COPYRIGHT Lorem ipsum dolor sit amet, \\
+        consectetur adipisicing elit, sed do eiusmod \\
+        \\
+        tempor incididunt ut labore et dolore magna aliqua. \\
+        \\
+        Ut enim \\
+        ad minim veniam, quis nostrud exercitation ullamco \\ 
+        \\
+        laboris nisi ut aliquip ex ea commodo consequat.}
+        
+        Another declarations:
+        {DATE 1966}
+        {DESCRIPTION Lorem ipsum dolor sit amet, consectetur
+        adipisicing elit, sed do eiusmod tempor incididunt
+        ut labore et dolore magna aliqua. Ut enim ad minim
+        veniam, quis nostrud exercitation ullamco laboris
+        nisi ut aliquip ex ea commodo consequat.}
+        {ISBN 978-3-16-148410-0} or {ISBN 9783161484100}
+        '''
+        optstatements = ('copyright', 'date', 'description', 'isbn')
+        d = {}
+        for s in optstatements:
+            p1 = re.compile(r'{'+dictionary()[language()][s]+' (?P<'+s+'>.+?)}', re.S)
+            m1 = p1.search(gp)
+            if m1:
+                d[s] = m1.group(s)
+        return d   
+    meta=dict(list(get_required().items()) + list(get_optional().items()))
+    meta['language']=language()
     return meta
 
 def struct(gp):
@@ -197,16 +273,15 @@ saved_footnotes_kindle_html = []
 
 def kindle_html(gp):
     def remove_meta(gp):
+        metas = ('author', 'title', 'copyright', 'date', 'description', 'isbn')
         r = gp
         for m in metas:
             p = re.compile(r'{'+get_re_string(dictionary()[language()][m])+' (.+?)}\n', re.S)
             r = re.sub(p, r'', r)
-        p2 = re.compile(r'{'+dictionary()[language()]['author']+' (.+?)}\n', re.S)
-        r2 = re.sub(p2, r'', r)
         print('DONE')
-        return r2
+        return r
     def add_header(gp):
-        with open('data/kindle/default/html_body_header', 'r', encoding='utf-8') as a_header:
+        with open(gp_path+'/data/kindle/default/html_body_header', 'r', encoding='utf-8') as a_header:
             header = a_header.read()+'\n'
         p = re.compile(r'AUTHOR: TITLE')
         r = p.sub(mainmeta['author']+': '+mainmeta['title'],header)
@@ -226,7 +301,14 @@ def kindle_html(gp):
         print('DONE')
         return header + body + gp
     def add_titlepage(gp):
-        page = '<a name="start"/>\n<div class="author">'+mainmeta['author']+'</div>\n'+'<div class="title">'+mainmeta['title']+'</div>\n'+'<div class="subtitle">'+mainmeta['subtitle']+'</div>\n'+'<div style="page-break-after:always; margin-top: 2%"></div>\n'
+        page = '<a name="start"/>\n<div class="author">'+mainmeta['author']+'</div>\n'+'<div class="title">'+mainmeta['title']+'</div>\n'
+        try:
+            check = mainmeta['title_2']
+        except:
+            check = False
+        if check:
+            page = page+'<div class="subtitle">'+mainmeta['title_2']+'</div>\n'
+        page=page+'<div style="page-break-after:always; margin-top: 2%"></div>\n'
         print('DONE')
         return page + gp
     def add_copyrightpage(gp):
@@ -341,7 +423,7 @@ def kindle_html(gp):
 
 def kindle_ncx():
     def add_header():
-        with open('data/kindle/default/ncx_header', 'r', encoding='utf-8') as a_header:
+        with open(gp_path+'/data/kindle/default/ncx_header', 'r', encoding='utf-8') as a_header:
             header = a_header.read()+'\n'
         p = re.compile(r'xml:lang="unknown"')
         r = p.sub('xml:lang="'+mainmeta['language']+'"',header)
@@ -387,25 +469,35 @@ def kindle_ncx():
 
 def kindle_opf():
     def add_header():
-        with open('data/kindle/default/opf_header', 'r', encoding='utf-8') as a_header:
+        with open(gp_path+'/data/kindle/default/opf_header', 'r', encoding='utf-8') as a_header:
             header = a_header.read()
         package = '<package unique-identifier="'+mainmeta['hash']+'">'
         print('DONE')
         return header+package+'\n'
     def add_metadata():
         def add_header():
-            with open('data/kindle/default/opf_metadata_header', 'r', encoding='utf-8') as a_header:
+            with open(gp_path+'/data/kindle/default/opf_metadata_header', 'r', encoding='utf-8') as a_header:
                 header = '<metadata>\n'+a_header.read()
             return header
         def add_common_metadata(meta):
-            content = '<dc:'+meta.capitalize()+'>'+mainmeta[meta]+'</dc:'+meta.capitalize()+'>'
-            return content+'\n'
+            content = ''
+            try:
+                check = mainmeta[meta]
+            except:
+                check = False
+            if check:
+                content = '<dc:'+meta.capitalize()+'>'+mainmeta[meta]+'</dc:'+meta.capitalize()+'>\n'
+            return content
         def add_author():
-            content = '<dc:Creator opf:file-as="'+remove_diacritic(mainmeta['sortauthor'])+'" opf:role="aut">'+mainmeta['author']+'</dc:Creator>'
+            content = '<dc:Creator opf:file-as="'+remove_diacritic(mainmeta['author_2'])+'" opf:role="aut">'+mainmeta['author']+'</dc:Creator>'
             return content+'\n'
         def add_identifier():
             content = '<dc:Identifier id="uid">'+mainmeta['hash']+'</dc:Identifier>\n'
-            if mainmeta['isbn']:
+            try:
+                check = mainmeta['isbn']
+            except:
+                check = False
+            if check:
                 content = content+'<dc:Identifier opf:scheme="ISBN">'+mainmeta['isbn']+'</dc:Identifier>\n'
             return content
         def add_footer():
@@ -469,10 +561,10 @@ def kindle_copy():
     print('\nCopying necessary files:')
     print('-'*80)
     print('    Copying .css file... ', end='')
-    copy('data/kindle/default/default.css','output')
+    copy(gp_path+'/data/kindle/default/default.css',out_path())
     print('DONE')
     print('    Copying cover.jpg file... ', end='')
-    copy('cover.jpg','output')
+    copy(file_path+'/cover.jpg',out_path())
     print('DONE')
 
 if __name__ == '__main__':
@@ -486,14 +578,16 @@ if __name__ == '__main__':
     mainmeta['hash'] = md5sum(options.filename)
     mainstruct = struct(data)
     mainfootnotes = footnotes(data)
+    
+    ensure_dir(mode)
 
-    with open('output/body.html', 'w', encoding='utf-8') as a_body:
+    with open(out_path()+'/body.html', 'w', encoding='utf-8') as a_body:
         a_body.write(kindle_html(data))
 
-    with open('output/toc.ncx', 'w', encoding='utf-8') as a_ncx:
+    with open(out_path()+'/toc.ncx', 'w', encoding='utf-8') as a_ncx:
         a_ncx.write(kindle_ncx())
     
-    with open('output/body.opf', 'w', encoding='utf-8') as a_opf:
+    with open(out_path()+'/body.opf', 'w', encoding='utf-8') as a_opf:
         a_opf.write(kindle_opf())
         
     kindle_copy()
