@@ -1,0 +1,41 @@
+# hungarian declarations map for gneposis publisher
+# by Adam Szieberth
+
+# author and title declarations
+
+SZERZŐ : author
+CÍM : title
+
+# declarations of metadata and for the publisher
+
+DÁTUM : date
+LEÍRÁS : description
+ISBN : isbn
+
+# main structure declarations
+
+RÉSZ : part
+FEJEZET : chapter
+PARAGRAFUS : paragraph
+
+# remaining structure declarations
+
+COPYRIGHT : copyright
+ELŐSZÓ : foreword
+ELŐSZÓ.SZERZŐ : preface
+BEVEZETÉS : intro
+
+HÍRDETÉS : announcement
+
+# notes and footnotes
+
+JEGYZET : note
+LÁBJEGYZET : footnote
+
+# style declarations
+
+JOBBRA : right
+
+# declarations for special contents
+
+VERS : verse

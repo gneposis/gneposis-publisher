@@ -1,0 +1,41 @@
+# english declarations map for gneposis publisher
+# by Adam Szieberth
+
+# author and title declarations
+
+AUTHOR : author
+TITLE : title
+
+# declarations of metadata
+
+DATE : date
+DESCRIPTION : description
+ISBN : isbn
+
+# main structure declarations
+
+PART : part
+CHAPTER : chapter
+PARAGRAPH : paragraph
+
+# remaining structure declarations
+
+COPYRIGHT : copyright
+FOREWORD : foreword
+PREFACE : preface
+INTRO : intro
+
+ANNOUNCEMENT : announcement
+
+# notes and footnotes
+
+FOOTNOTE : footnote
+NOTE : note
+
+# style declarations
+
+RIGHT : right
+
+# declarations for special contents
+
+VERSE : verse

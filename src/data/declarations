@@ -1,0 +1,41 @@
+# declarations settings for gneposis publisher
+# by Adam Szieberth
+
+# author and title declarations
+
+author : (name :: sortname) required 
+title : (title <:: subtitle>) required single
+
+# declarations of metadata
+
+date : (year <:: month> <:: day>) single
+description : (description) single
+isbn : (isbn) single
+
+# main structure declarations
+
+part : (parttitle <:: partsubtitle>)
+chapter : (chaptertitle <:: chaptersubtitle>)
+paragraph : (paragraphtitle)
+
+# remaining structure declarations
+
+copyright : ()
+foreword : (forewordtitle)
+preface : (prefacetitle)
+intro : (introtitle) single
+
+announcement : ()
+
+# notes and footnotes
+
+footnote : (footnote) inline
+note : (note) inline
+
+# style declarations
+
+right : ()
+
+# declarations for special contents
+
+verse : (<title> <:: author>)

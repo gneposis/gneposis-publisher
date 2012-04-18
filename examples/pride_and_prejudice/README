@@ -1,9 +1,9 @@
-Pride and Prejustice
+Pride and Prejudice
 By Jane Austen
 
 gneposis-publiser source file
 
-usage: python3 <gp_path>/gp.py -f pride_and_prejustice.txt
+usage: python3 <gp_path>/gp.py -f pride_and_prejudice.txt
        <kindlegen_path>/kindlegen ./kindle/book.opf
 
 --------------------------------------------------------------------------------
