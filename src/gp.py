@@ -298,6 +298,31 @@ def d(inputdata):
         
     return d
 
+def get_linestarts(inputdata):
+    linestarts = {}
+    p = re.compile(r'^', re.M)
+    s = p.finditer(inputdata)
+    i = 1
+    for m in s:
+        linestarts[i] = m.span()[0]
+        i += 1
+#        print(m.span()[0])
+    return linestarts
+
+def get_line_nr(x, inputdata):
+    linestarts = get_linestarts(inputdata)
+    for l in range(2,len(linestarts)):
+        if linestarts[l-1] <= x and linestarts[l] > x:
+            return l-1
+        elif linestarts[l] <= x and len(inputdata) > x:
+            return l
+        
+def get_line(line, inputdata):
+    linestarts = get_linestarts(inputdata)  
+    return inputdata[linestarts[line]:linestarts.get(line+1, len(data)+1)-1]
+    
+        
+
 
 def get_meta(inputdata):
     ''' Get metadata from modified gneposis data file '''
