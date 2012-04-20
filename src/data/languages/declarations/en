@@ -17,6 +17,7 @@ ISBN : isbn
 PART : part
 CHAPTER : chapter
 PARAGRAPH : paragraph
+*** : stars
 
 # remaining structure declarations
 

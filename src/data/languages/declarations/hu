@@ -17,6 +17,7 @@ ISBN : isbn
 RÉSZ : part
 FEJEZET : chapter
 PARAGRAFUS : paragraph
+*** : stars
 
 # remaining structure declarations
 

@@ -14,16 +14,17 @@ isbn : (isbn) single
 
 # main structure declarations
 
-part : (parttitle <:: partsubtitle>)
-chapter : (chaptertitle <:: chaptersubtitle>)
-paragraph : (paragraphtitle)
+part : (title <:: subtitle>)
+chapter : (title <:: subtitle>)
+paragraph : (title)
+stars : ()
 
 # remaining structure declarations
 
 copyright : ()
-foreword : (forewordtitle)
-preface : (prefacetitle)
-intro : (introtitle) single
+foreword : (title)
+preface : (title)
+intro : (title) single
 
 announcement : ()
 

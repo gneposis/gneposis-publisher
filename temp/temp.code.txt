@@ -1,33 +1,20 @@
-'''
-Created on Apr 2, 2012
-
-@author: adam szieberth
-
-This program is free software. It comes without any warranty, to
-the extent permitted by applicable law. You can redistribute it
-and/or modify it under the terms of the Do What The Fuck You Want
-To Public License, Version 2, as published by Sam Hocevar. See
-http://sam.zoy.org/wtfpl/COPYING for more details.
-'''
+Former gp.py
+================================================================================
 
 import os
 import glob
 import re
 import unicodedata
-import sys
-from optparse import OptionParser
 from shutil import copy
 
-parser = OptionParser()
-parser.add_option('-f', '--file', action='store', type='string', dest='filename')
-(options, args) = parser.parse_args()
+import gnparser
 
-gp_path=os.path.abspath(os.path.split(sys.argv[0])[0])
-file_path=os.path.split(options.filename)[0]
-file_name=os.path.split(options.filename)[1]
+import gp
+import gpcmd
+
+import path
+
 mode='kindle'
-
-
 
 # Code: http://stackoverflow.com/questions/273192/python-best-way-to-create-directory-if-it-doesnt-exist-for-file-write
 def ensure_dir(f):
@@ -61,228 +48,11 @@ def md5sum(filename):
 
 ####
 
-def raw():
-    ''' Converts the structure of the sourcedata to a more comfortable one.'''
-    # You want to open the sourcedata and name it
-    with open(options.filename, encoding='utf-8') as a_file:
-        raw = a_file.read()
-        # Now we want to remove the zero width no-break space character at
-        # the beginning of our data.
-        raw = re.sub('^\ufeff',r'',raw)
-        # Now you want to convert multilined declarations to a single line with
-        # linebreaks. You want to make a function which replaces linebreaks to
-        # '\\'s in your match.
-        def singlelineize(match):
-            inputdata = match.group()
-            p = re.compile(r'\n')
-            return p.sub(r'\\\\',inputdata)
-        # Now you search for declarations, and singlelineize them.
-        p = re.compile(r'^{.+?}', re.M|re.S)
-        raw = p.sub(singlelineize, raw)
-        # Now you want to make sure all current declaration is followed by an
-        # empty line. This is necessary before you can continue.
-        raw = re.sub('}\n(?!{|\n)',r'}\n\n',raw)
-        # Now you want to make all the paragraphs to go in a single line and
-        # all the declarations to have their own line. Plus you want no empty
-        # lines to remain.
-        # To do this you search for a linebreak which is not followed by a "{".
-        # After it comes all contains of that line till the end of the line,
-        # which is grouped.
-        # For replace you want the group (without the linebreak) followed by a
-        # whitespace.
-        raw = re.sub(r'\n(?!{)(.+)$',r'\1 ', raw, flags=re.M)
-        # Now you need to trim the trailing whitespace(s) the source document
-        # may had and the previous code made.
-        raw = re.sub(r'\s+$',r'', raw, flags=re.M)
-        # Now you want to get rid of remaining empty lines. You use a loop to
-        # do the job until they exist.
-        r = True
-        while r:
-            p = re.compile(r'\n\n')
-            # Now you look for a match in 'r'. It returns None if no more
-            # empty lines exist, and the loop will also end.
-            r = p.search(raw)
-            if r:
-                raw = p.sub(r'\n',raw)
-        # Now you want to get rid of whitespaces in a row. You use a loop
-        # again, much like the one before.
-        r = True
-        while r:
-            p = re.compile(r'\s\s')
-            r = p.search(raw)
-            if r:
-                raw = p.sub(r' ',raw)        
-        # Now you want to get rid of spaces around linebreak declarations
-        # ('\\') you may have in your source document. They no need in your
-        # rawdata.
-        # You do it in two steps, one for starting, and one for trailing
-        # whitespaces.
-        raw = re.sub(r'\s\\\\',r'\\\\', raw)
-        raw = re.sub(r'\\\\\s',r'\\\\', raw)
 
-    return raw
 
-def utfize(inputdata):
-    '''Replaces parts (characters) of inputdata to their utf representative.'''
-    # You want to replace dashes:
-    inputdata = inputdata.replace('---','—') # Em dash
-    inputdata = inputdata.replace('--','–') # Then en dash
-    # You define a function to convert full quotes such {Q Lorem ipsum} to “Lorem
-    # ipsum”. You call the function immediately.
-    def conv_fullquote(inputdata):
-        p = re.compile(r'"(.+?)"')
-        r = re.sub(p, r'“\1”', inputdata)
-        return r
-    inputdata = conv_fullquote(inputdata)
-    # Now you want the remaining "s to be converted to “s.
-    inputdata = re.sub(r'"', r'“', inputdata)
-    # Now you want to convert other quotemarks:
-    inputdata = inputdata.replace(',,','„')
-    inputdata = inputdata.replace("''","”")
-    
-    return inputdata
 
-def get_declarations(inputdata):
-    ''' Returns the declarations dictionary for inputdata'''
-    def declarations_dictionary():
-        ''' Creates the dictionary of declarations based on files in <gp.py_path>/data/languages/declarations/'''
-        # You want to create a dictionary for upcoming data.
-        dictionary = {}
-        # Now you would like to get data from all declarations file of all
-        # languages, so get their path one-by-one.
-        for dict_file in glob.glob(gp_path+'/data/languages/declarations/*'):
-            # You need to split filename and get its language key.
-            path_split = os.path.split(dict_file)
-            lang = path_split[1]
-            # Now you have the key you can create a subdictionary for it.
-            dictionary[lang] = {}
-            # Now you want to open the declarations file, and read it.
-            with open(dict_file, encoding='utf-8') as a_file:
-                dictfile = a_file.read()
-                # Now you want to get the declaration keys from dictfile, so you
-                # will use a loop and indexing.
-                s = True
-                i = 0
-                while s:
-                    # You want to search for a row which is not starting with an #,
-                    # but contains the declaration followed by a : with zero or
-                    # more whitespace(s) before and after followed by the key part
-                    # until the end of the line (excluding trailing whitespaces).
-                    p = re.compile(r'^(?!#)(?P<declaration>.+?)\s{0,}:\s{0,}(?P<key>.+?)\s{0,}$', flags=re.M)
-                    # You want to search for the pattern in the file from the
-                    # actual index to the end. If no match, 's' returns None and
-                    # the loop will stop.
-                    s = p.search(dictfile[i:])
-                    if s:
-                        # If match then you want to add the declaration to the
-                        # dictionary.
-                        dictionary[lang][s.group('declaration')] = s.group('key')
-                        # Now you want to increment the index with the end of the
-                        # match.
-                        i += s.end()
-        return dictionary
-    def get_language(inputdata):
-        ''' Gets language key from beginning of inputdata:
-        
-        If inputdata begins with '{hu}' or '{HU}' it returns 'hu' if there is a
-        hu file in /data/languages/declarations/.
-        
-        If inputdata begins with '{AUTHOR ...}' or '{TITLE ...}' it returns
-        'en' since it will find AUTHOR or TITLE as a valid author or title 
-        declaration in the english declaration file. Same with '{SZERZŐ ...}'
-        for hungarian; this returns 'hu'.
-        '''
-        # You want to search for the very first declaration of inputdata.
-        s = re.search(r'^{(?P<key>.+?)\s|}', inputdata)
-        # Now you want to check all languages. 'k' returns their keys.
-        for k in list(declarations_dictionary().keys()):
-            # If the very first declaration is the actual key, you are done.
-            # This works for '{HU}' kind language declaration.  
-            if s.group('key').lower() == k:
-                return k
-            # Else you want to check all the keys of the actual language for
-            # matching. 
-            else:
-                for l in list(declarations_dictionary()[k].keys()):
-                    if s.group('key') == l:
-                        # Now you only want allow 'k' to be the language if
-                        # the respectable value in the dictionary is 'author'
-                        # or 'title'.
-                        if declarations_dictionary()[k][l] == 'author' or declarations_dictionary()[k][l] == 'title':
-                            return k
-    # You want this function to return the dictionary for the document language
-    # only.
-    
-    return declarations_dictionary()[get_language(inputdata)]
 
-def get_declaration_properties():
-    def get_rawdata():
-        d = {}
-        with open(gp_path+'/data/declarations', encoding='utf-8') as a_file:
-            file = a_file.read()
-            s1 = True
-            i = 0
-            while s1:
-                p1 = re.compile(r'^(?!#)(?P<declaration>.+?)\s{0,}:\s{0,}\((?P<format>.{0,}?)\)(?P<options>.{0,}?)$', flags=re.M)
-                s1 = p1.search(file[i:])
-                if s1:
-                    d[s1.group('declaration')] = {}
-                    if s1.group('format') == '':
-                        d[s1.group('declaration')]['format'] = None
-                    else:
-                        d[s1.group('declaration')]['format'] = s1.group('format')
-                    if s1.group('options') == '':
-                        d[s1.group('declaration')]['options'] = None
-                    else:
-                        d[s1.group('declaration')]['options'] = s1.group('options')
-                    i += s1.end()
-        return d
-    prop = {}
-    propkeys = list(get_rawdata().keys())
-    for k in propkeys:
 
-        prop[k] = {}
-        
-        propformat = get_rawdata()[k]['format']
-        propoptions = get_rawdata()[k]['options']
-        
-        s = True
-        i = 0
-        nr = 1
-        reqargs = 0
-        optargs = 0
-        while s and propformat:
-            p = re.compile(r'\w+?\b')
-            s = p.search(propformat[i:])
-            if s:
-                p2 = re.compile(r'<'+s.group()+'>')
-                p3 = re.compile(r'<:: '+s.group()+'>')
-                s2 = p2.search(propformat[i:])
-                s3 = p3.search(propformat[i:])
-                
-                if s2 or s3:
-                    optargs += 1
-                else:
-                    reqargs += 1
-                prop[k][nr] = s.group()
-                i += s.end()
-                nr +=1
-        
-        prop[k]['reqargs'] = reqargs
-        prop[k]['optargs'] = optargs
-        
-        s = True
-        i = 0
-        while s and propoptions:
-            p = re.compile(r'\b(.+?)\b')
-            s = p.search(propoptions[i:])
-            if s:
-                prop[k][s.group(1)] = True
-                i += s.end()
-        
-    
-    
-    return prop
 
 def d(inputdata):
     d = {}
@@ -298,31 +68,29 @@ def d(inputdata):
         
     return d
 
-def get_linestarts(inputdata):
-    linestarts = {}
-    p = re.compile(r'^', re.M)
-    s = p.finditer(inputdata)
-    i = 1
-    for m in s:
-        linestarts[i] = m.span()[0]
-        i += 1
-#        print(m.span()[0])
-    return linestarts
 
-def get_line_nr(x, inputdata):
-    linestarts = get_linestarts(inputdata)
-    for l in range(2,len(linestarts)):
-        if linestarts[l-1] <= x and linestarts[l] > x:
-            return l-1
-        elif linestarts[l] <= x and len(inputdata) > x:
-            return l
         
-def get_line(line, inputdata):
-    linestarts = get_linestarts(inputdata)  
-    return inputdata[linestarts[line]:linestarts.get(line+1, len(data)+1)-1]
+
     
-        
+def structs(inputdata):
+    def get_raw_structs(inputdata):
+        raw_locations = {}
+        p = re.compile(r'^{.+}$', re.M)
+        s = p.finditer(inputdata)
+        f = p.findall(inputdata)
+        i = 1
+        for m in s:
+            raw_locations[i] = (get_line_nr(m.span()[0], inputdata), f[i-1])
+            i += 1
+        return raw_locations
+    raw_structs = get_raw_structs(inputdata)
+    return raw_structs
 
+def get_struct(struct):
+    # EZEN MÉG VAN MELÓm soronként kell if [1]=
+    p = re.compile(r'^{(.+?)\s(.+)}$')
+    s = p.search(struct)
+    return (get_declarations(data)[s.group(1)], s.group(2))
 
 def get_meta(inputdata):
     ''' Get metadata from modified gneposis data file '''
@@ -483,6 +251,63 @@ def tocname(tocelement):
     return tocname
 
 saved_footnotes_kindle_html = []
+
+
+
+
+#### TEST
+
+
+
+
+
+
+
+if __name__ == '__main__':
+#    pass
+    print('gneposis-publisher 0.1alpha by Adam Szieberth')
+    print('='*80)
+    
+#    data = utfize(raw())
+#    declarations = get_declarations(data)
+#    metadata = get_meta(data)
+    
+    
+#   metadata = meta(data)
+#   metadata['hash'] = md5sum(options.filename)
+#   mainstruct = struct(data)
+#   mainfootnotes = footnotes(data)
+#
+#   with open(out_path()+'/body.html', 'w', encoding='utf-8') as a_body:
+#       a_body.write(kindle_html(data))
+#
+#   with open(out_path()+'/toc.ncx', 'w', encoding='utf-8') as a_ncx:
+#       a_ncx.write(kindle_ncx())
+#   
+#   with open(out_path()+'/body.opf', 'w', encoding='utf-8') as a_opf:
+#       a_opf.write(kindle_opf())
+#       
+#   kindle_copy()
+    
+#    with open(file_path+'/'+file_name.split('.')[0]+'.raw', 'w', encoding='utf-8') as a_raw:
+#        a_raw.write(data)
+
+### innenmost
+
+#    dec = get_declarations(data)
+
+
+
+
+
+
+FOR KINDLE KONVERSION
+################################################################################'''
+Created on Apr 20, 2012
+
+@author: adam
+'''
+
 
 def kindle_html(gp):
     def remove_meta(gp):
@@ -783,34 +608,3 @@ def kindle_copy():
     print('    Copying cover.jpg file... ', end='')
     copy(file_path+'/cover.jpg',out_path())
     print('DONE')
-
-if __name__ == '__main__':
-#    pass
-    print('gneposis-publisher 0.1alpha by Adam Szieberth')
-    print('='*80)
-    
-    data = utfize(raw())
-    declarations = get_declarations(data)
-#    metadata = get_meta(data)
-    
-    
-#   metadata = meta(data)
-#   metadata['hash'] = md5sum(options.filename)
-#   mainstruct = struct(data)
-#   mainfootnotes = footnotes(data)
-#
-#   with open(out_path()+'/body.html', 'w', encoding='utf-8') as a_body:
-#       a_body.write(kindle_html(data))
-#
-#   with open(out_path()+'/toc.ncx', 'w', encoding='utf-8') as a_ncx:
-#       a_ncx.write(kindle_ncx())
-#   
-#   with open(out_path()+'/body.opf', 'w', encoding='utf-8') as a_opf:
-#       a_opf.write(kindle_opf())
-#       
-#   kindle_copy()
-    
-    with open(file_path+'/'+file_name.split('.')[0]+'.raw', 'w', encoding='utf-8') as a_raw:
-        a_raw.write(data)
-        
-    a = get_declaration_properties()
