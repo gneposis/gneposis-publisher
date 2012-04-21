@@ -14,8 +14,10 @@ ISBN : isbn
 
 # main structure declarations
 
+BOOK : book
 PART : part
 CHAPTER : chapter
+SECTION: section
 PARAGRAPH : paragraph
 *** : stars
 

@@ -14,17 +14,19 @@ isbn : (isbn) single
 
 # main structure declarations
 
-part : (title <:: subtitle>)
-chapter : (title <:: subtitle>)
-paragraph : (title)
-stars : ()
+book : (title <:: subtitle>) main
+part : (title <:: subtitle>) main
+chapter : (title <:: subtitle>) main
+section : (title <:: subtitle>) main
+paragraph : (title) main level9
+stars : () level100
 
 # remaining structure declarations
 
-copyright : ()
-foreword : (title)
-preface : (title)
-intro : (title) single
+copyright : () matter
+foreword : (title) matter
+preface : (title) matter
+intro : (title) main
 
 announcement : ()
 

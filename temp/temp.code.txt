@@ -608,3 +608,6 @@ def kindle_copy():
     print('    Copying cover.jpg file... ', end='')
     copy(file_path+'/cover.jpg',out_path())
     print('DONE')
+    
+    
+    struct[rule][i].update('line'=line)

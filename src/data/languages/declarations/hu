@@ -14,8 +14,10 @@ ISBN : isbn
 
 # main structure declarations
 
+KÖNYV : book
 RÉSZ : part
 FEJEZET : chapter
+SZAKASZ : section
 PARAGRAFUS : paragraph
 *** : stars
 

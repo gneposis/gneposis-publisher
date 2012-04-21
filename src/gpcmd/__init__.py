@@ -60,11 +60,12 @@ def decrules(propdata):
         
         s = True
         i = 0
+        prop[k]['options'] = {}
         while s and propoptions:
             p = re.compile(r'\b(.+?)\b')
             s = p.search(propoptions[i:])
             if s:
-                prop[k][s.group(1)] = True
+                prop[k]['options'][s.group(1)] = True
                 i += s.end()    
     return prop
 
@@ -168,10 +169,85 @@ def decparser(declaration, rules, dictionary):
         else:
             # ide kell egy raise ha r nagyobb 0
             o -= 1
-    return print(d)
+    return d
 
-def meta(inputdata, rules, dictionary):
+def rawstruct(inputdata, rules, dictionary):
+    def nextdeclaration(inputdata, rules, dictionary, startline, declaration):
+        locnewlines = gnparser.locnewlines(inputdata)
+        for line in range(startline, len(locnewlines)+1):
+            if inputdata[locnewlines[line]] == '{':
+                if not declaration or declaration == decparser(gnparser.line(line, inputdata), rules, dictionary)['key']:
+                    return line
+    rawstruct = {}
     locnewlines = gnparser.locnewlines(inputdata)
     for line in locnewlines:
         if inputdata[locnewlines[line]] == '{':
-            decparser(gnparser.line(line, inputdata), rules, dictionary)
+            rawstruct[line] = decparser(gnparser.line(line, inputdata), rules, dictionary)
+            rawstruct[line].update(nextdeclaration=nextdeclaration(inputdata, rules, dictionary, line+1, None))
+            rawstruct[line].update(nextsamedeclaration=nextdeclaration(inputdata, rules, dictionary, line+1, rawstruct[line]['key']))
+    return rawstruct
+
+def l_lines(rawstruct):
+    return sorted(list(rawstruct.keys()))
+
+def struct(rawstruct):
+    def s_rules(rawstruct):
+        s = set()
+        for line in l_lines(rawstruct):
+            s.add(rawstruct[line]['key'])
+        return s
+    struct = {}
+    for rule in s_rules(rawstruct):
+        struct[rule] = {}
+        i = 1
+        j = 0
+        for line in l_lines(rawstruct):
+            if rule == rawstruct[line].get('key', False):
+                struct[rule][i] = rawstruct[line]
+                struct[rule][i].update(line=line, structindex=j)
+                i += 1
+            j += 1
+    return struct
+
+def parent(rawstruct, lineofdeclaration, parentdeclaration=None):
+    i = l_lines(rawstruct).index(lineofdeclaration)
+    if parentdeclaration:
+        s = True
+        while s and i>0:
+            i -= 1
+            if parentdeclaration == rawstruct[l_lines(rawstruct)[i]]['key']:
+                s = False
+                return l_lines(rawstruct)[i]
+    return None    
+
+def bodystruct(rawstruct):
+    i = [0]
+    currentparent = None
+    struct = []
+    parents = {'part':None, 'chapter': 'part', 'stars': 'chapter'}
+    for line in l_lines(rawstruct):
+        declaration = rawstruct[line]['key']
+        if declaration in parents.keys():
+            if not parent(rawstruct,line,parents[declaration]):
+                i = i[0]
+                i += 1
+                currentparent = parent(rawstruct,line,parents[declaration])   
+            elif parent == parent(rawstruct,line,parents[declaration]):
+                i[-1] += 1
+            else:
+                i = i[:-1]
+                i[-1] += 1
+                currentparent = parent(rawstruct,line,parents[declaration])
+            print (i)
+    return None
+
+# map(str, list_of_ints)
+#===============================================================================
+# temporary
+#===============================================================================
+
+########## This goes to some verifying function
+#   def options(declaration, rules):
+#       return list(rules['declaration']['options'].keys())
+#   def option(declaration, option):
+#       return declaration.get('option', False)

@@ -14,15 +14,26 @@ http://sam.zoy.org/wtfpl/COPYING for more details.
 '''
 
 import sys
-import gp
 import gnparser
 import gpcmd
 import re
 
-import gpconverter.kindle
+import gpconverter
+import opts
+
 
 if __name__ == "__main__":
     print('gneposis-publisher 0.1alpha by Adam Szieberth')
     print('='*80)
 
-    data = gpconverter.kindle.data
+    with open(opts.path + '/data/declarations', encoding='utf-8') as a_file:
+        rules = gpcmd.decrules(a_file.read())
+    
+    with open(opts.file, encoding='utf-8') as a_file:
+        raw = gpconverter.raw(a_file.read())
+        
+    dictionary = gpcmd.declarations(raw, opts.path + '/data/languages/declarations/*')
+    
+    rawstruct = gpcmd.rawstruct(raw, rules, dictionary)
+    
+    struct = gpcmd.struct(rawstruct)
