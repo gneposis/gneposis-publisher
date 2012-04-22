@@ -37,3 +37,11 @@ if __name__ == "__main__":
     rawstruct = gpcmd.rawstruct(raw, rules, dictionary)
     
     struct = gpcmd.struct(rawstruct)
+    
+    
+#===============================================================================
+# test
+#===============================================================================
+
+    with open(opts.filepath+'/'+opts.filefile+'.raw.'+opts.fileext, 'w', encoding='utf-8') as a_raw:
+        a_raw.write(raw)

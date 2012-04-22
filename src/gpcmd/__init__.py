@@ -1,6 +1,10 @@
 import glob
 import os
 import re
+import operator
+
+
+import copy
 
 import gnparser
 
@@ -10,7 +14,7 @@ def decrules(propdata):
         s1 = True
         i = 0
         while s1:
-            p1 = re.compile(r'^(?!#)(?P<declaration>.+?)\s{0,}:\s{0,}\((?P<format>.{0,}?)\)(?P<options>.{0,}?)$', flags=re.M)
+            p1 = re.compile(r'^(?!#)(?P<declaration>.+?)\s*:\s*\((?P<format>.*?)\)(?P<options>.*?)$', flags=re.M)
             s1 = p1.search(propdata[i:])
             if s1:
                 d[s1.group('declaration')] = {}
@@ -61,11 +65,16 @@ def decrules(propdata):
         s = True
         i = 0
         prop[k]['options'] = {}
+        if propoptions:
+            propoptions = propoptions+' '
         while s and propoptions:
-            p = re.compile(r'\b(.+?)\b')
+            p = re.compile(r'\s*(.+?)\s+')
             s = p.search(propoptions[i:])
             if s:
-                prop[k]['options'][s.group(1)] = True
+                try:
+                    prop[k]['options'][s.group(1)[:s.group(1).index('=')]] = s.group(1)[s.group(1).index('=')+1:]
+                except:
+                    prop[k]['options'][s.group(1)] = True
                 i += s.end()    
     return prop
 
@@ -190,55 +199,72 @@ def rawstruct(inputdata, rules, dictionary):
 def l_lines(rawstruct):
     return sorted(list(rawstruct.keys()))
 
+def s_rules(rawstruct):
+    s = set()
+    for line in l_lines(rawstruct):
+        s.add(rawstruct[line]['key'])
+    return s
+
 def struct(rawstruct):
-    def s_rules(rawstruct):
-        s = set()
-        for line in l_lines(rawstruct):
-            s.add(rawstruct[line]['key'])
-        return s
     struct = {}
-    for rule in s_rules(rawstruct):
+    _rawstruct = copy.deepcopy(rawstruct)
+    for rule in s_rules(_rawstruct):
         struct[rule] = {}
         i = 1
         j = 0
-        for line in l_lines(rawstruct):
-            if rule == rawstruct[line].get('key', False):
-                struct[rule][i] = rawstruct[line]
+        for line in l_lines(_rawstruct):
+            if rule == _rawstruct[line].get('key', False):
+                del _rawstruct[line]['key']
+                struct[rule][i] = _rawstruct[line]
                 struct[rule][i].update(line=line, structindex=j)
                 i += 1
             j += 1
     return struct
 
-def parent(rawstruct, lineofdeclaration, parentdeclaration=None):
-    i = l_lines(rawstruct).index(lineofdeclaration)
-    if parentdeclaration:
-        s = True
-        while s and i>0:
-            i -= 1
-            if parentdeclaration == rawstruct[l_lines(rawstruct)[i]]['key']:
-                s = False
-                return l_lines(rawstruct)[i]
-    return None    
+def g_dec_by_opt(rules,option):
+    s = set(rules.keys())
+    d = set()
+    for e in s:
+        if rules[e]['options'].get(option,None):
+            d.add(e)
+    return d
 
-def bodystruct(rawstruct):
-    i = [0]
-    currentparent = None
-    struct = []
-    parents = {'part':None, 'chapter': 'part', 'stars': 'chapter'}
+def g_rule(rawstruct, rules):
+    l = list(g_dec_by_opt(rules,'level') & s_rules(rawstruct))
+    level = []
+    for i in l:
+        level.append(rules[i]['options']['level'])
+    d = dict(zip(l,level))
+    return tuple(sorted(d, key=d.get))
+
+def sub(rawstruct, rules, lineofdeclaration):
+    rule = g_rule(rawstruct,rules)
+    i = l_lines(rawstruct).index(lineofdeclaration)
+    refdeclaration = rawstruct[lineofdeclaration]['key']
+    if refdeclaration in rule:
+        refdeclarationindex = rule.index(refdeclaration)
+        s = True
+        sub = []
+        while s and i < len(l_lines(rawstruct))-1:
+            i += 1
+            currentline = l_lines(rawstruct)[i]
+            currentdeclaration = rawstruct[currentline]['key']
+            currentdeclarationindex =rule.index(currentdeclaration)
+            if currentdeclarationindex == refdeclarationindex+1:
+                sub.append(currentline)
+            elif currentdeclarationindex <= refdeclarationindex:
+                s = False
+    else:
+        return None
+    return tuple(sub)
+
+def bodystruct(rawstruct, rules, depth=None):
+    hier = g_rule(rawstruct,rules)
+    if not depth:
+        depth=len(hier)
     for line in l_lines(rawstruct):
-        declaration = rawstruct[line]['key']
-        if declaration in parents.keys():
-            if not parent(rawstruct,line,parents[declaration]):
-                i = i[0]
-                i += 1
-                currentparent = parent(rawstruct,line,parents[declaration])   
-            elif parent == parent(rawstruct,line,parents[declaration]):
-                i[-1] += 1
-            else:
-                i = i[:-1]
-                i[-1] += 1
-                currentparent = parent(rawstruct,line,parents[declaration])
-            print (i)
+        if rawstruct[line]['key'] in hier[0:depth]:
+            print('    '*hier.index(rawstruct[line]['key'])+rawstruct[line]['title'])
     return None
 
 # map(str, list_of_ints)

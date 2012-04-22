@@ -14,12 +14,12 @@ isbn : (isbn) single
 
 # main structure declarations
 
-book : (title <:: subtitle>) main
-part : (title <:: subtitle>) main
-chapter : (title <:: subtitle>) main
-section : (title <:: subtitle>) main
-paragraph : (title) main level9
-stars : () level100
+book : (title <:: subtitle>) main level=1
+part : (title <:: subtitle>) main level=2
+chapter : (title <:: subtitle>) main level=3
+section : (title <:: subtitle>) main level=4
+paragraph : (title) main level=5
+stars : () level=100
 
 # remaining structure declarations
 
