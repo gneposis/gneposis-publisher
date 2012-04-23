@@ -19,7 +19,7 @@ part : (title <:: subtitle>) main level=2
 chapter : (title <:: subtitle>) main level=3
 section : (title <:: subtitle>) main level=4
 paragraph : (title) main level=5
-stars : () level=100
+stars : ()
 
 # remaining structure declarations
 
