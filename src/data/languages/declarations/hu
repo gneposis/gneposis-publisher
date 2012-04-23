@@ -24,6 +24,7 @@ PARAGRAFUS : paragraph
 # remaining structure declarations
 
 COPYRIGHT : copyright
+AJÁNLÁS : dedication
 ELŐSZÓ : foreword
 ELŐSZÓ.SZERZŐ : preface
 BEVEZETÉS : intro

@@ -24,6 +24,7 @@ PARAGRAPH : paragraph
 # remaining structure declarations
 
 COPYRIGHT : copyright
+DEDICATION : dedication
 FOREWORD : foreword
 PREFACE : preface
 INTRO : intro

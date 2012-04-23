@@ -21,11 +21,18 @@ import re
 import gpconverter
 import opts
 
+def kindle(data, struct):
+    from gpconverter import kindle
+    from gpconverter import utf
+    a = kindle.body(data,struct)
+    return a
+    
 
 if __name__ == "__main__":
-    print('gneposis-publisher 0.1alpha by Adam Szieberth')
-    print('='*80)
+    print('\ngneposis-publisher 0.1alpha by Adam Szieberth, 2012')
+    print('='*67)
 
+    print('\nAnalyzing input file...'.ljust(61),end='')
     with open(opts.declarations, encoding='utf-8') as a_file:
         rules = gp.decrules(a_file.read())
     
@@ -35,6 +42,15 @@ if __name__ == "__main__":
     dictionary = gp.declarations(raw, opts.decpath)
     
     struct = gp.struct(raw, rules, dictionary)
+    print('[DONE]'.rjust(7))
+    
+    if opts.mode == 'kindle':
+        print('\nCreating kindle body file...'.ljust(61),end='')
+        with open(opts.ensure_dir(opts.filepath+'/'+opts.mode)+'/'+opts.filefile+'.html', 'w', encoding='utf-8') as a_body:
+            a_body.write(kindle(raw, struct))
+        print('[DONE]'.rjust(7))
+        
+        
     
     
 #===============================================================================

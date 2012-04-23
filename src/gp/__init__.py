@@ -302,23 +302,33 @@ def struct(rawdata, rules, dictionary):
                 rawstruct[line] = decparser(gnparser.line(line, rawdata), rules, dictionary)
         return rawstruct
     
-    def lines(rawstruct):
+    def declines(rawstruct):
         '''Returns a sorted list of the line numbers of declarations.
         Useful to iterate elements of rawstruct.'''
         return sorted(list(rawstruct.keys()))
     
-    def ind(line, lines):
+    def ind(line, dec_lines):
         '''Returns the index of a declaration by line'''
-        if line in lines:
-            return lines.index(line)
+        if line in dec_lines:
+            return dec_lines.index(line)
     
     def nextdecind(rawstruct, startline, key=None):
         '''Returns the index of the next declaration of a given key (any if None)'''
-        _lines = lines(_rawstruct)
+        _lines = declines(rawstruct)
         i = _lines.index(startline)
         for line in _lines[i+1:]:
             if not key or key == rawstruct[line]['key']:
                 return ind(line,_lines)
+            
+    def decs(rawstruct, key):
+        '''Returns the tuple of linenumbers starting with declaration
+        of the given key.'''
+        _lines = declines(rawstruct)
+        l = []
+        for line in _lines:
+            if key == rawstruct[line]['key']:
+                l.append(line)
+        return tuple(l) 
     
     def hierarchy(rawstruct, rules, option='level'):
         '''Returns the sorted tuple of declarations of rawstruct
@@ -326,7 +336,7 @@ def struct(rawdata, rules, dictionary):
         def s_rules(rawstruct):
             '''Returns a set of all different declaration keys of rawstruct.'''
             s = set()
-            for line in lines(rawstruct):
+            for line in declines(rawstruct):
                 s.add(rawstruct[line]['key'])
             return s
         # You want the intersection of the available declaration keys, and the ones
@@ -338,18 +348,52 @@ def struct(rawdata, rules, dictionary):
             d[i] = rules[i]['options'][option]
         # Now you return the sorted tuple sorting based on values
         return tuple(sorted(d, key=d.get))
-    
+    # Now you want to create the structure data. Lets start some veriables to
+    # make code easier and faster to compute:
     struct = []
     _rawstruct = rawstruct(rawdata, rules, dictionary)
-    _lines = lines(_rawstruct)
+    _lines = declines(_rawstruct)
     _hierarchy = hierarchy(_rawstruct, rules)
+    # Now you want to start parsing all the declarations one by one:
     for line in _lines:
-        dec = _rawstruct[line]['key']
+        # Again, some variables
+        _dec = _rawstruct[line]['key']
+        _decs = decs(_rawstruct, _dec)
+        # First you want to add data from rawdata
         struct.append(_rawstruct[line])
+        # Now the corresponding line number in the rawdata
         struct[-1].update(line=line)
+        # The index of the next declaration
         struct[-1].update(nextany=nextdecind(_rawstruct, line))
-        struct[-1].update(nextsame=nextdecind(_rawstruct, line, key=dec))
-        if dec in _hierarchy:
-            struct[-1].update(level=_hierarchy.index(dec))
+        # The index of the next declaration which has the same key
+        struct[-1].update(nextsame=nextdecind(_rawstruct, line, key=_dec))
+        # Now the index of the current declaration among all declaratons with
+        # same key.
+        struct[-1].update(decindex=(_decs.index(line)))
+        # Now the level if possible. To get this, the program will check which
+        # body levels exists, sorts them, and returns the index of the current
+        # declaration in that hierarchy.
+        if _dec in _hierarchy:
+            struct[-1].update(level=_hierarchy.index(_dec))
     return tuple(struct)
 
+def deccounts(struct, rules):
+    '''Returns the count of declarations in a dictionary.'''
+    def counter(struct, key):
+        '''Counts the occassions of a declaration in struct by key.'''
+        n = 0
+        for i in range(len(struct)):
+            if key == struct[i]['key']:
+                n += 1
+        return n
+    d={}
+    for key in rules.keys():
+        if counter(struct,key) > 0:
+            d[key] = counter(struct,key)
+    return d
+
+def dec_ind(struct, key, name):
+    '''Returns the first occassion of a given key in struct.'''
+    for i in range(len(struct)):
+        if key == struct[i]['key']:
+            return struct[i].get(name,None)

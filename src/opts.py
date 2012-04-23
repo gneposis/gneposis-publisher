@@ -8,6 +8,13 @@ import os
 import sys
 from optparse import OptionParser
 
+def ensure_dir(f):
+    # Code is from: http://stackoverflow.com/questions/273192/python-best-way-to-create-directory-if-it-doesnt-exist-for-file-write
+    '''Creates directory for output file if not exits.'''
+    if not os.path.exists(f):
+        os.makedirs(f)
+    return f
+
 parser = OptionParser()
 parser.add_option('-f', '--file', action='store', type='string', dest='filename')
 (options, args) = parser.parse_args()

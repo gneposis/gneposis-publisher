@@ -1,4 +1,7 @@
 import re
+import unicodedata
+import hashlib
+from functools import partial
 
 def restg(inputstring):
     string = inputstring
@@ -42,3 +45,21 @@ def line(linenr, inputdata):
     '''Returns the content of a given line in a given data''' 
     _lines = locnewlines(inputdata)  
     return inputdata[_lines[linenr]:_lines.get(linenr+1, len(inputdata)+1)-1]
+
+def remove_diacritic(i):
+    # This code is from http://code.activestate.com/recipes/576648-remove-diatrical-marks-including-accents-from-stri/
+    ''' Accept a unicode string, and return a normal string (bytes in Python 3)
+    without any diacritical marks. '''
+    return unicodedata.normalize('NFKD', i).encode('ASCII', 'ignore').decode()
+
+def gethash(inputdata):
+    '''Returns the md5 hash of a given data'''
+
+def md5sum(filename):
+    # Code is from http://stackoverflow.com/a/7829658
+    '''Returns the md5sum of a given file'''
+    with open(filename, mode='rb') as f:
+        d = hashlib.md5()
+        for buf in iter(partial(f.read, 128), b''):
+            d.update(buf)
+    return d.hexdigest()

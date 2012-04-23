@@ -14,19 +14,20 @@ isbn : (isbn) single
 
 # main structure declarations
 
-book : (title <:: subtitle>) main level=1
-part : (title <:: subtitle>) main level=2
-chapter : (title <:: subtitle>) main level=3
-section : (title <:: subtitle>) main level=4
-paragraph : (title) main level=5
+book : (title <:: subtitle>) level=1
+part : (title <:: subtitle>) level=2
+chapter : (title <:: subtitle>) level=3
+section : (title <:: subtitle>) level=4
+paragraph : (title) level=5
 stars : ()
 
 # remaining structure declarations
 
-copyright : () matter
-foreword : (title) matter
-preface : (title) matter
-intro : (title) main
+copyright : ()
+dedication: ()
+foreword : (title)
+preface : (title)
+intro : (title)
 
 announcement : ()
 
