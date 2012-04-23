@@ -25,6 +25,10 @@ else:
     filefile = filefull
     fileext = None
 
+declarations = path + '/data/declarations'
+decpath = path + '/data/languages/declarations/*'
+
+
 
 #===============================================================================
 # temporary

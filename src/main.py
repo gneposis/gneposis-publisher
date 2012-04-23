@@ -15,7 +15,7 @@ http://sam.zoy.org/wtfpl/COPYING for more details.
 
 import sys
 import gnparser
-import gpcmd
+import gp
 import re
 
 import gpconverter
@@ -26,17 +26,15 @@ if __name__ == "__main__":
     print('gneposis-publisher 0.1alpha by Adam Szieberth')
     print('='*80)
 
-    with open(opts.path + '/data/declarations', encoding='utf-8') as a_file:
-        rules = gpcmd.decrules(a_file.read())
+    with open(opts.declarations, encoding='utf-8') as a_file:
+        rules = gp.decrules(a_file.read())
     
     with open(opts.file, encoding='utf-8') as a_file:
         raw = gpconverter.raw(a_file.read())
         
-    dictionary = gpcmd.declarations(raw, opts.path + '/data/languages/declarations/*')
+    dictionary = gp.declarations(raw, opts.decpath)
     
-    rawstruct = gpcmd.rawstruct(raw, rules, dictionary)
-    
-    struct = gpcmd.struct(rawstruct)
+    struct = gp.struct(raw, rules, dictionary)
     
     
 #===============================================================================
