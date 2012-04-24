@@ -9,7 +9,7 @@ title : (title <:: subtitle>) required single
 # declarations of metadata
 
 date : (year <:: month> <:: day>) single
-description : (description) single
+description : () single
 isbn : (isbn) single
 
 # main structure declarations

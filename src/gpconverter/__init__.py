@@ -5,16 +5,6 @@ def raw(inputdata):
     # You want to remove the zero width no-break space character at
     # the beginning of your inputdata.
     raw = re.sub('^\ufeff',r'',inputdata)
-    # Now you want to convert multilined declarations to a single line with
-    # linebreaks. You want to make a function which replaces linebreaks to
-    # '\\'s in your match.
-    def singlelineize(match):
-        inputdata = match.group()
-        p = re.compile(r'\n')
-        return p.sub(r'\\\\',inputdata)
-    # Now you search for declarations, and singlelineize them.
-    p = re.compile(r'^{.+?}', re.M|re.S)
-    raw = p.sub(singlelineize, raw)
     # Now you want to make sure all current declaration is followed by an
     # empty line. This is necessary before you can continue.
     raw = re.sub('}\n(?!{|\n)',r'}\n\n',raw)

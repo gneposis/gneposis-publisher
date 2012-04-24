@@ -63,3 +63,10 @@ def md5sum(filename):
         for buf in iter(partial(f.read, 128), b''):
             d.update(buf)
     return d.hexdigest()
+
+def md5(data):
+    # Code is from http://stackoverflow.com/a/7829658
+    '''Returns the md5sum of a given file'''
+    d = hashlib.md5()
+    d.update(data.encode('utf-8'))
+    return d.hexdigest()

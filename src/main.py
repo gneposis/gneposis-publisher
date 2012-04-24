@@ -21,6 +21,8 @@ import re
 import gpconverter
 import opts
 
+import gp.layout
+
 def kindle(data, struct):
     from gpconverter import kindle
     from gpconverter import utf
