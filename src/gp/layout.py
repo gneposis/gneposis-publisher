@@ -83,6 +83,9 @@ def raw(raw_data, rules, dictionary, debug=False):
     if any.
     remaining keys are determined by rules
     '''
+    # Since analization is a long process you want to import a saved layout if
+    # possible, and raw_data is identical to the one the save based on. 'load'
+    # function will do that. You want to force analyzation if debug is True.
     if not debug and load(raw_data):
         layout = load(raw_data)
     else:
@@ -93,18 +96,59 @@ def raw(raw_data, rules, dictionary, debug=False):
         locnewlines = gnparser.locnewlines(raw_data)
         for line in locnewlines:
             i = 0
-            print('\rAnalizing input file: {0}/{1} ({2}%)'.format(line,len(locnewlines),round(line/len(locnewlines)*100,1)).ljust(61),end='')
+            # Since it can be a long process, you want to put a progress
+            # message.
+            print('\rAnalyzing input file: {0}/{1} ({2}%)'.format(line,len(locnewlines),round(line/len(locnewlines)*100,1)).ljust(61),end='')
+            # You want to get the content of the current line
             _line = gnparser.line(line, raw_data)
+            # Now you want to search for anything between {}-s.
             p = re.compile(r'{.+?}')
+            # Since there can be more match, you want them all. 'fi' will
+            # return the list of them and you will get the column from it
             fi, it = p.findall(_line), p.finditer(_line)
-            
             if fi:
                 for e in it:
+                    # Add the data declaration_parser can get, first.
                     layout.append(declaration_parser(fi[i], rules, dictionary))
+                    # Now the current line number in raw_data.
                     layout[-1].update(line=line)
+                    # Now the start and end column of the match.
                     layout[-1].update(column=e.span())
                     i += 1
+        # You want to save the layout since it is a long process to get.
+        # Moreover, future calls will be fast as hell...
         save(raw_data, layout)
         print('[DONE]'.rjust(7))
     return tuple(layout)
 
+def get(rawlayout, rules, startindex=0, endindex=None, nextonly=True, key=None, optionkey=None, optionvalue=None):
+    def option(key, rules, optionkey, optionvalue):
+        if optionkey and optionvalue:
+            if optionvalue == rules[key]['options'].get(optionkey, False):
+                return True
+        elif optionkey and not optionvalue:
+            if rules[key]['options'].get(optionkey, None):
+                return True
+        else:
+            return None
+           
+    if not endindex:
+        endindex = len(rawlayout)
+    
+    result = []
+    
+    for i in range(startindex,endindex):
+        
+        if key and key == rawlayout[i]['key']:
+            add = True
+        elif not key and optionkey and option(rawlayout[i]['key'], rules, optionkey, optionvalue):
+            add = True
+        else:
+            add = False
+        
+        if nextonly == True and add == True:
+            return i
+        elif nextonly == False and add == True:
+            result.append(i)
+        
+    return tuple(result)
