@@ -46,8 +46,13 @@ def declaration_parser(declaration, rules, dictionary):
         name = rule[a-r-o+1]
         # You search for a complete sequence excluding whitespaces followed by
         # a ":" or a closing "}".
-        s = re.search(r'\s*(?P<name>.+?)\s*[:}]',declaration[i:])
-        if s:
+        s1 = re.search(r'\s*(?P<name>.+?)\s*::',declaration[i:])
+        s2 = re.search(r'\s*(?P<name>.+?)\s*}',declaration[i:])
+        if s1 or s2:
+            if s1:
+                s = s1
+            else:
+                s = s2
             # If match then you add the argument to the dictionary, increment
             # the search index, and check if r or o should be decreased by one.
             d[name] = s.group('name')
@@ -91,10 +96,16 @@ def raw(raw_data, rules, dictionary, debug=False):
     else:
     # Now you want to define a list for your struct elements.
         layout = []
-        # Now you want to get the locations of all the newlines of raw_data and
-        # parse them one-by-one if they contain a declaration.
+        
         locnewlines = gnparser.locnewlines(raw_data)
-        for line in locnewlines:
+        loc = 0
+        j = 0
+        while loc>=0:
+            loc = raw_data[j:].find('{')
+            line = gnparser.linenr(loc + j, raw_data)
+
+            j += loc + 1
+
             i = 0
             # Since it can be a long process, you want to put a progress
             # message.
@@ -121,7 +132,7 @@ def raw(raw_data, rules, dictionary, debug=False):
         print('[DONE]'.rjust(7))
     return tuple(layout)
 
-def get(rawlayout, rules, startindex=0, endindex=None, nextonly=True, key=None, optionkey=None, optionvalue=None):
+def get(rawlayout, rules, startindex=0, endindex=None, nextonly=False, key=None, line=None, optionkey=None, optionvalue=None):
     def option(key, rules, optionkey, optionvalue):
         if optionkey and optionvalue:
             if optionvalue == rules[key]['options'].get(optionkey, False):
@@ -139,16 +150,83 @@ def get(rawlayout, rules, startindex=0, endindex=None, nextonly=True, key=None, 
     
     for i in range(startindex,endindex):
         
-        if key and key == rawlayout[i]['key']:
+        if key == rawlayout[i]['key'] and not line:
             add = True
-        elif not key and optionkey and option(rawlayout[i]['key'], rules, optionkey, optionvalue):
+        elif line == rawlayout[i]['line'] and not key:
+            add = True
+        elif key == rawlayout[i]['key'] and line == rawlayout[i]['line']:
+            add = True
+        elif not key and optionkey and option(rawlayout[i]['key'], rules, optionkey, optionvalue) and not line:
+            add = True
+        elif not key and optionkey and option(rawlayout[i]['key'], rules, optionkey, optionvalue) and line == rawlayout[i]['line']:
             add = True
         else:
             add = False
-        
+
         if nextonly == True and add == True:
-            return i
+            return tuple(i)
         elif nextonly == False and add == True:
             result.append(i)
-        
     return tuple(result)
+
+def hierarchy(rawlayout, rules, optionkey='level'):
+    _list = get(rawlayout, rules, optionkey=optionkey, startindex=0, endindex=None, nextonly=False)
+    _set = set()
+    for i in _list:
+        _set.add(rawlayout[i]['key'])
+    d={}
+    for j in _set:
+        d[j] = rules[j]['options'][optionkey]
+    return tuple(sorted(d, key=d.get))
+
+def depth(rawlayout, rules, key, maximum=1000, optionkey='level'):
+    _hierarchy = hierarchy(rawlayout, rules, optionkey=optionkey)
+    try:
+        return min(_hierarchy.index(key), maximum)
+    except:
+        return None
+
+def line(raw_data, rules, dictionary, linenr):
+    _rawlayout = raw(raw_data,rules,dictionary)
+    _declarations = get(_rawlayout, rules, line=linenr, startindex=0, endindex=None, nextonly=False)
+    _line = gnparser.line(linenr,raw_data)
+    remaining = len(_declarations)
+    done = 0
+    generating = True
+    
+    content = []
+    
+    while generating:
+        # whole phase
+        if remaining == 0 and done == 0:
+            s = None
+            e = None
+            add = False
+        # opening phase
+        elif remaining > 0 and done == 0:
+            s = None
+            e = _rawlayout[_declarations[done]]['column'][0]
+            add = True
+        # inter phase
+        elif remaining > 0 and done > 0:
+            s = _rawlayout[_declarations[done-1]]['column'][1]
+            e = _rawlayout[_declarations[done]]['column'][0]
+            add = True
+        # end phase
+        elif remaining == 0 and done > 0:
+            s = _rawlayout[_declarations[done-1]]['column'][1]
+            e = None
+            add = False
+            generating = False
+        
+        content.append(_line[s:e])
+        
+        if add:
+            content.append(_declarations[done])
+            remaining -= 1
+            done += 1
+
+    return tuple(content)
+        
+        
+
