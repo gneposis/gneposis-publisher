@@ -38,7 +38,11 @@ LÁBJEGYZET : footnote
 
 # style declarations
 
+BALRA : left
 JOBBRA : right
+KÖZÉPRE : center
+
+/ : end
 
 # declarations for special contents
 

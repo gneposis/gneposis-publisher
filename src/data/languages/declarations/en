@@ -38,7 +38,11 @@ NOTE : note
 
 # style declarations
 
+LEFT : left
 RIGHT : right
+CENTER : center
+
+/ : end
 
 # declarations for special contents
 

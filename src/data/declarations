@@ -14,20 +14,20 @@ isbn : (isbn) single
 
 # main structure declarations
 
-book : (title <:: subtitle>) level=1
-part : (title <:: subtitle>) level=2
-chapter : (title <:: subtitle>) level=3
-section : (title <:: subtitle>) level=4
-paragraph : (title) level=5
-stars : ()
+book : (title <:: subtitle>) level=1 style
+part : (title <:: subtitle>) level=2 style
+chapter : (title <:: subtitle>) level=3 style
+section : (title <:: subtitle>) level=4 style
+paragraph : (title) level=5 style
+stars : () style
 
 # remaining structure declarations
 
-copyright : ()
-dedication: ()
-foreword : (title)
-preface : (title)
-intro : (title)
+copyright : () style=copyright
+dedication: () style=dedication
+foreword : (title) style
+preface : (title) style
+intro : (title) style
 
 announcement : ()
 
@@ -38,8 +38,12 @@ note : (note) inline
 
 # style declarations
 
-right : ()
+left: () style=left
+right : () style=right
+center : () style=center
+
+end: () style
 
 # declarations for special contents
 
-verse : (<title> <:: author>)
+verse : (<title> <:: author>) style=verse

@@ -227,6 +227,39 @@ def line(raw_data, rules, dictionary, linenr):
             done += 1
 
     return tuple(content)
-        
-        
+
+def declines(rawlayout,rules, optionkey='style'):
+    _list = get(rawlayout, rules, optionkey=optionkey, startindex=0, endindex=None, nextonly=False)
+    _set = set()
+    for i in _list:
+        _set.add(rawlayout[i]['line'])
+    return sorted(_set)
+
+def styles(rawlayout, rules):
+    _list = declines(rawlayout, rules, optionkey='style')
+    d={}
+    for i in _list:
+        for j in range(len(rawlayout)):
+            if rawlayout[j]['line'] == i and rules[rawlayout[j]['key']]['options'].get('style', None): 
+                d[i] = rules[rawlayout[j]['key']]['options']['style']
+    return d
+
+def styleofline(rawlayout,rules,line):
+    _declines = declines(rawlayout,rules, optionkey='style')
+    if line < min(_declines):
+        return None
+    elif line in _declines:
+        return None
+    elif line > max(_declines):
+        _style = styles(rawlayout, rules)[_declines[len(_declines)-1]]
+        if _style == True:
+            return 'normal'
+        return _style
+    else:
+        for i in range(len(_declines)):
+            if _declines[i] < line and _declines[i+1] > line:
+                _style = styles(rawlayout, rules)[_declines[i]]
+                if _style == True:
+                    return 'normal'
+                return _style
 
