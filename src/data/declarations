@@ -14,20 +14,20 @@ isbn : (isbn) single meta
 
 # main structure declarations
 
-book : (title <:: subtitle>) level=1 style
-part : (title <:: subtitle>) level=2 style
-chapter : (title <:: subtitle>) level=3 style
-section : (title <:: subtitle>) level=4 style
-paragraph : (title) level=5 style
-stars : () style
+book : (title <:: subtitle>) level=1 class
+part : (title <:: subtitle>) level=2 class
+chapter : (title <:: subtitle>) level=3 class
+section : (title <:: subtitle>) level=4 class
+paragraph : (title) level=5 class
+stars : () class
 
 # remaining structure declarations
 
-copyright : () style=copyright row
-dedication: () style=dedication
-foreword : (title) style
-preface : (title) style
-intro : (title) style
+copyright : () class=copyright row
+dedication: () class=dedication
+foreword : (title) class
+preface : (title) class
+intro : (title) class
 
 announcement : ()
 
@@ -36,14 +36,14 @@ announcement : ()
 footnote : (footnote) inline
 note : (note) inline
 
-# style declarations
+# class declarations
 
-left: () style=left
-right : () style=right
-center : () style=center
+left: () class=left
+right : () class=right
+center : () class=center
 
-end: () style
+end: () class
 
 # declarations for special contents
 
-verse : (<title> <:: author>) style=verse row
+verse : (<title> <:: author>) class=verse row

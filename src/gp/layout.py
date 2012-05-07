@@ -41,6 +41,7 @@ def declaration_parser(declaration, rules, dictionary):
     r = rule['reqargs']
     o = rule['optargs']
     a = r + o
+    args = 0
     while r + o > 0:
         # You get the name of the current argument. Index: Total - current + 1.
         name = rule[a-r-o+1]
@@ -61,12 +62,16 @@ def declaration_parser(declaration, rules, dictionary):
                 r -= 1
             else:
                 o -= 1
+            args +=1
         else:
             # If not all required arguments has benn set, you want to raise an
             # exception.
             if r > 0:
                 raise Warning('Required argument missing in '+declaration+'!')
             o -= 1
+            
+    d['arguments'] = args
+    
     return d
 
 def raw(raw_data, rules, dictionary, debug=False):
@@ -99,33 +104,49 @@ def raw(raw_data, rules, dictionary, debug=False):
         
         locnewlines = gnparser.locnewlines(raw_data)
         loc = 0
+        line = 0
         j = 0
         while loc>=0:
             loc = raw_data[j:].find('{')
-            line = gnparser.linenr(loc + j, raw_data)
-
-            j += loc + 1
-
-            i = 0
-            # Since it can be a long process, you want to put a progress
-            # message.
-            print('\rAnalyzing input file: {0}/{1} ({2}%)'.format(line,len(locnewlines),round(line/len(locnewlines)*100,1)).ljust(61),end='')
-            # You want to get the content of the current line
-            _line = gnparser.line(line, raw_data)
-            # Now you want to search for anything between {}-s.
-            p = re.compile(r'{.+?}')
-            # Since there can be more match, you want them all. 'fi' will
-            # return the list of them and you will get the column from it
-            fi, it = p.findall(_line), p.finditer(_line)
-            if fi:
-                for e in it:
-                    # Add the data declaration_parser can get, first.
-                    layout.append(declaration_parser(fi[i], rules, dictionary))
-                    # Now the current line number in raw_data.
-                    layout[-1].update(line=line)
-                    # Now the start and end column of the match.
-                    layout[-1].update(column=e.span())
-                    i += 1
+            if loc>=0:
+                previousline = line
+                line = gnparser.linenr(loc + j, raw_data)
+    
+                j = gnparser.locnewlines(raw_data)[line+1]
+    
+                # Since it can be a long process, you want to put a progress
+                # message.
+                print('\rAnalyzing input file: {0}/{1} ({2}%)'.format(line,len(locnewlines),round(line/len(locnewlines)*100,1)).ljust(61),end='')
+                # You want to get the content of the current line
+                _line = gnparser.line(line, raw_data)
+                # Now you want to search for anything between {}-s.
+                p = re.compile(r'{.+?}')
+                # Since there can be more match, you want them all. 'fi' will
+                # return the list of them and you will get the column from it
+                fi, it = p.findall(_line), p.finditer(_line)
+                if fi:
+                    i = 0
+                    for e in it:
+                        # Add the data declaration_parser can get, first.
+                        layout.append(declaration_parser(fi[i], rules, dictionary))
+                        # Now the current line number in raw_data.
+                        layout[-1].update(line=line)
+                        # Now the start and end column of the match.
+                        layout[-1].update(column=e.span())
+                        
+                        _key = declaration_parser(fi[i], rules, dictionary)['key']
+                        try:
+                            _previouskey = layout[-2]['key']
+                        except:
+                            _previouskey = None            
+                        if previousline + 1 == line and _previouskey and rules[_previouskey]['options'].get('level',None) and rules[_key]['options'].get('level',None):
+                            layout[-1].update(css=_key+_previouskey)
+                        elif rules[_key]['options'].get('level',None) :
+                            layout[-1].update(css=_key)
+                            
+                        i += 1
+            else:
+                print('\rAnalyzing input file: {0}/{0} (100%)'.format(len(locnewlines)).ljust(61),end='')
         # You want to save the layout since it is a long process to get.
         # Moreover, future calls will be fast as hell...
         save(raw_data, layout)
@@ -133,7 +154,7 @@ def raw(raw_data, rules, dictionary, debug=False):
     return tuple(layout)
 
 def get(rawlayout, rules, startindex=0, endindex=None, nextonly=False, key=None, line=None, optionkey=None, optionvalue=None):
-    def option(key, rules, optionkey, optionvalue):
+    def get_option(key, rules, optionkey, optionvalue):
         if optionkey and optionvalue:
             if optionvalue == rules[key]['options'].get(optionkey, False):
                 return True
@@ -156,9 +177,9 @@ def get(rawlayout, rules, startindex=0, endindex=None, nextonly=False, key=None,
             add = True
         elif key == rawlayout[i]['key'] and line == rawlayout[i]['line']:
             add = True
-        elif not key and optionkey and option(rawlayout[i]['key'], rules, optionkey, optionvalue) and not line:
+        elif not key and optionkey and get_option(rawlayout[i]['key'], rules, optionkey, optionvalue) and not line:
             add = True
-        elif not key and optionkey and option(rawlayout[i]['key'], rules, optionkey, optionvalue) and line == rawlayout[i]['line']:
+        elif not key and optionkey and get_option(rawlayout[i]['key'], rules, optionkey, optionvalue) and line == rawlayout[i]['line']:
             add = True
         else:
             add = False
@@ -168,23 +189,6 @@ def get(rawlayout, rules, startindex=0, endindex=None, nextonly=False, key=None,
         elif nextonly == False and add == True:
             result.append(i)
     return tuple(result)
-
-def hierarchy(rawlayout, rules, optionkey='level'):
-    _list = get(rawlayout, rules, optionkey=optionkey, startindex=0, endindex=None, nextonly=False)
-    _set = set()
-    for i in _list:
-        _set.add(rawlayout[i]['key'])
-    d={}
-    for j in _set:
-        d[j] = rules[j]['options'][optionkey]
-    return tuple(sorted(d, key=d.get))
-
-def depth(rawlayout, rules, key, maximum=1000, optionkey='level'):
-    _hierarchy = hierarchy(rawlayout, rules, optionkey=optionkey)
-    try:
-        return min(_hierarchy.index(key), maximum)
-    except:
-        return None
 
 def line(raw_data, rules, dictionary, linenr):
     _rawlayout = raw(raw_data,rules,dictionary)
@@ -228,38 +232,40 @@ def line(raw_data, rules, dictionary, linenr):
 
     return tuple(content)
 
-def declines(rawlayout,rules, optionkey='style'):
+def declinopt(rawlayout,rules, optionkey):
     _list = get(rawlayout, rules, optionkey=optionkey, startindex=0, endindex=None, nextonly=False)
     _set = set()
     for i in _list:
         _set.add(rawlayout[i]['line'])
     return sorted(_set)
 
-def styles(rawlayout, rules):
-    _list = declines(rawlayout, rules, optionkey='style')
+def decopt(rawlayout, rules, optionkey, hierarchy=False):
+    _list = declinopt(rawlayout, rules, optionkey=optionkey)
     d={}
+    _set = set()
     for i in _list:
         for j in range(len(rawlayout)):
-            if rawlayout[j]['line'] == i and rules[rawlayout[j]['key']]['options'].get('style', None): 
-                d[i] = rules[rawlayout[j]['key']]['options']['style']
+            if rawlayout[j]['line'] == i and rules[rawlayout[j]['key']]['options'].get(optionkey, None): 
+                d[i] = rules[rawlayout[j]['key']]['options'][optionkey]
+                _set.add(rules[rawlayout[j]['key']]['options'][optionkey])
+    if hierarchy:
+        _hierarchy = sorted(_set)
+        for j in d:
+            d[j] = _hierarchy.index(d[j])
     return d
 
-def styleofline(rawlayout,rules,line):
-    _declines = declines(rawlayout,rules, optionkey='style')
-    if line < min(_declines):
+def option(rawlayout,rules,line, hierarchy=False, optionkey='class'):
+    _declinesbyoption = declinopt(rawlayout,rules, optionkey=optionkey)
+    if line < min(_declinesbyoption):
         return None
-    elif line in _declines:
+    elif line in _declinesbyoption:
         return None
-    elif line > max(_declines):
-        _style = styles(rawlayout, rules)[_declines[len(_declines)-1]]
-        if _style == True:
-            return 'normal'
-        return _style
+    elif line > max(_declinesbyoption):
+        _line = _declinesbyoption[len(_declinesbyoption)-1]
+        return decopt(rawlayout, rules, optionkey, hierarchy=hierarchy)[_line]
     else:
-        for i in range(len(_declines)):
-            if _declines[i] < line and _declines[i+1] > line:
-                _style = styles(rawlayout, rules)[_declines[i]]
-                if _style == True:
-                    return 'normal'
-                return _style
-
+        for i in range(len(_declinesbyoption)):
+            _line = _declinesbyoption[i]
+            _nextline = _declinesbyoption[i+1]
+            if _line < line and _nextline > line:
+                return decopt(rawlayout, rules, optionkey, hierarchy=hierarchy)[_line]

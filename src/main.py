@@ -39,9 +39,7 @@ if __name__ == "__main__":
         rules = gp.decrules(a_file.read())
     
     with open(opts.file, encoding='utf-8') as a_file:
-        test = a_file.read()
-        preraw = gpconverter.preraw(test)
-        raw = gpconverter.raw(test)
+        raw = gpconverter.raw(a_file.read())
         
     dictionary = gp.declarations(raw, opts.decpath)
     
@@ -60,9 +58,7 @@ if __name__ == "__main__":
 # test
 #===============================================================================
 
-
-    with open(opts.filepath+'/'+opts.filefile+'.preraw.'+opts.fileext, 'w', encoding='utf-8') as a_preraw:
-        a_preraw.write(preraw)
-
     with open(opts.filepath+'/'+opts.filefile+'.raw.'+opts.fileext, 'w', encoding='utf-8') as a_raw:
         a_raw.write(raw)
+        
+    a = gp.layout.raw(raw, rules, dictionary,True)

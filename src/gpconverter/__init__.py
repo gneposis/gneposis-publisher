@@ -5,26 +5,8 @@ import gp
 
 from opts import declarations, decpath
 
-def preraw(inputdata):
-    ''' Converts the structure of the sourcedata to a more comfortable one.'''
-    # You want to remove the zero width no-break space character at
-    # the beginning of your inputdata.
-    raw = re.sub('^\ufeff',r'',inputdata)
-    # Now you want to make sure all current declaration is followed by an
-    # empty line. This is necessary before you can continue.
-    
-    raw = re.sub('}\n(?!{|\n)',r'}\n\n',raw)
-    
-    # Now you want to make all the paragraphs to go in a single line and
-    # all the declarations to have their own line. Plus you want no empty
-    # lines to remain.
-    # You also want to be able to switch between paragraph mode or row mode.
-    # For that you want to parse the document line-by-line:
-    return raw
-
-
 def raw(inputdata):
-    def trimnewline(content,newlinecount=2):
+    def trimnewline(content,newlinecount=2,replacestring='\\n'):
         r = True
         while r:
             p = re.compile(r'\n{'+str(newlinecount)+',}')
@@ -32,14 +14,21 @@ def raw(inputdata):
             # empty lines exist, and the loop will also end.
             r = p.search(content)
             if r:
-                content = p.sub(r'\n',content)
+                content = p.sub(str(replacestring),content)
         return content
     def removebordernewlines(content):
         content = re.sub(r'\n+$',r'\n',content)
         content = re.sub(r'}\n{2,}',r'}\n',content)
         return content
 
-    _raw = preraw(inputdata)
+    # You want to remove the zero width no-break space character at
+    # the beginning of your inputdata.
+    _raw = re.sub('^\ufeff',r'',inputdata)
+    # Now you want to make sure all current declaration is followed by an
+    # empty line. This is necessary before you can continue.
+    _raw = re.sub('}\n(?!\n)',r'}\n\n',_raw)
+    _raw = re.sub('\n+{',r'\n\n{',_raw)
+
     with open(declarations, encoding='utf-8') as a_file:
         _rules = gp.decrules(a_file.read())
     _dictionary = gp.declarations(_raw, decpath)
@@ -49,23 +38,22 @@ def raw(inputdata):
     raw = ''
     row = False
     while loc_dec>=0:
-        
+
         loc0 = loc1
         loc_dec = _raw[loc0+1:].find('{')
         if loc_dec < 0:
             loc1 = None
         else:
             loc1 = loc0+loc_dec+1
-        
+
         _key = gp.layout.declaration_parser(_raw[loc0:loc1], _rules, _dictionary)['key']
         row = _rules[_key]['options'].get('row',False)
-        
-        print(loc0,loc_dec,loc1,_key,row)
         content = _raw[loc0:loc1]
+
         if row == False:
-            # TODO: LÁBJEGYZET,,Jó estét!''
-            content = re.sub(r'\n(?!{)(.+)$',r'\1 ', content, flags=re.M)
-            content = trimnewline(content)
+            content = trimnewline(content,replacestring='@@@')
+            content = re.sub(r'\n',r' ', content, flags=re.M)
+            content = re.sub(r'@@@',r'\n', content, flags=re.M)
         else:
             content = trimnewline(content,newlinecount=3)
             content = removebordernewlines(content)
