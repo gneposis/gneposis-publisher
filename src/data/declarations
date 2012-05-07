@@ -3,14 +3,14 @@
 
 # author and title declarations
 
-author : (name :: sortname) required 
-title : (title <:: subtitle>) required single
+author : (name :: sortname) required meta
+title : (title <:: subtitle>) required single meta
 
 # declarations of metadata
 
-date : (year <:: month> <:: day>) single
-description : () single
-isbn : (isbn) single
+date : (year <:: month> <:: day>) single meta
+description : () single meta
+isbn : (isbn) single meta
 
 # main structure declarations
 
@@ -23,7 +23,7 @@ stars : () style
 
 # remaining structure declarations
 
-copyright : () style=copyright
+copyright : () style=copyright row
 dedication: () style=dedication
 foreword : (title) style
 preface : (title) style
@@ -46,4 +46,4 @@ end: () style
 
 # declarations for special contents
 
-verse : (<title> <:: author>) style=verse
+verse : (<title> <:: author>) style=verse row

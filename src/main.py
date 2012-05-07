@@ -39,18 +39,19 @@ if __name__ == "__main__":
         rules = gp.decrules(a_file.read())
     
     with open(opts.file, encoding='utf-8') as a_file:
-        raw = gpconverter.raw(a_file.read())
+        test = a_file.read()
+        preraw = gpconverter.preraw(test)
+        raw = gpconverter.raw(test)
         
     dictionary = gp.declarations(raw, opts.decpath)
     
-    struct = gp.struct(raw, rules, dictionary)
     print('[DONE]'.rjust(7))
     
-    if opts.mode == 'kindle':
-        print('\nCreating kindle body file...'.ljust(61),end='')
-        with open(opts.ensure_dir(opts.filepath+'/'+opts.mode)+'/'+opts.filefile+'.html', 'w', encoding='utf-8') as a_body:
-            a_body.write(kindle(raw, struct))
-        print('[DONE]'.rjust(7))
+#   if opts.mode == 'kindle':
+#       print('\nCreating kindle body file...'.ljust(61),end='')
+#       with open(opts.ensure_dir(opts.filepath+'/'+opts.mode)+'/'+opts.filefile+'.html', 'w', encoding='utf-8') as a_body:
+#           a_body.write(kindle(raw, struct))
+#       print('[DONE]'.rjust(7))
         
         
     
@@ -58,6 +59,10 @@ if __name__ == "__main__":
 #===============================================================================
 # test
 #===============================================================================
+
+
+    with open(opts.filepath+'/'+opts.filefile+'.preraw.'+opts.fileext, 'w', encoding='utf-8') as a_preraw:
+        a_preraw.write(preraw)
 
     with open(opts.filepath+'/'+opts.filefile+'.raw.'+opts.fileext, 'w', encoding='utf-8') as a_raw:
         a_raw.write(raw)
