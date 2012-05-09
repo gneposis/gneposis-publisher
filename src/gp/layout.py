@@ -143,10 +143,14 @@ def raw(raw_data, rules, dictionary, debug=False):
                             layout[-1].update(css=_key+_previouskey)
                         elif rules[_key]['options'].get('level',None) :
                             layout[-1].update(css=_key)
-                            
                         i += 1
+                        
+                        if rules[_key]['options'].get('level',None):
+                            layout[-1].update(ref=ref(layout,rules,layout[-1]['line']))
+                        
             else:
                 print('\rAnalyzing input file: {0}/{0} (100%)'.format(len(locnewlines)).ljust(61),end='')
+        
         # You want to save the layout since it is a long process to get.
         # Moreover, future calls will be fast as hell...
         save(raw_data, layout)
@@ -269,3 +273,77 @@ def option(rawlayout,rules,line, hierarchy=False, optionkey='class'):
             _nextline = _declinesbyoption[i+1]
             if _line < line and _nextline > line:
                 return decopt(rawlayout, rules, optionkey, hierarchy=hierarchy)[_line]
+
+def ref(rawlayout,rules, line, hierarchy=True, optionkey='level'):
+    
+    _declinesbyoption = declinopt(rawlayout,rules, optionkey=optionkey)
+    
+    def parent(rawlayout,rules, line, hierarchy=True, optionkey='level'):
+        i = _declinesbyoption.index(line)
+        v0 = decopt(rawlayout,rules,optionkey,hierarchy=hierarchy)[line]
+        s = True
+        while s:
+            try:
+                _line = _declinesbyoption[i-1]
+                v1 = decopt(rawlayout,rules,optionkey,hierarchy=hierarchy)[_line]
+                if v1 < v0:
+                    return (v0, v1, _line)
+                else:
+                    i -= 1
+            except:
+                s = False
+    
+    def count(rawlayout, rules, line, startline=None):
+        def startlineind(rawlayout,startline):
+            for i in rawlayout:
+                if i['line'] >= startline:
+                    return rawlayout.index(i)
+            return 0
+        
+        for i in rawlayout:
+            if i['line'] == line:
+                _key =  i['key']
+        
+        if startline:
+            j = startlineind(rawlayout,startline)
+        else:
+            j = 0
+        
+        c = 1
+        
+        for k in range(j,len(rawlayout)):
+            if rawlayout[k]['key']==_key and rawlayout[k]['line']==line:
+                return c
+            elif rawlayout[k]['key']==_key:
+                c += 1
+    
+    
+    ref = []
+    loop = True
+    while loop:
+        if line in _declinesbyoption:
+            _parent = parent(rawlayout, rules, line, hierarchy=hierarchy, optionkey=optionkey)
+            
+            _count = count(rawlayout, rules, line)
+            
+            if _parent:
+                _countfromparent = count(rawlayout, rules, line, startline=_parent[2])
+                if _count == _countfromparent:
+                    ref.insert(0,_count)
+                else:
+                    ref.insert(0,(_count, _countfromparent))
+            else:
+                ref.insert(0,_count)
+            
+            if _parent:
+                line = _parent[2]
+                d = _parent[0] - _parent[1]
+                while d > 1:
+                    ref.insert(0,None)
+                    d -= 1
+            else:
+                loop = False
+        else:
+            loop = False
+    
+    return tuple(ref)

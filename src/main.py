@@ -61,4 +61,10 @@ if __name__ == "__main__":
     with open(opts.filepath+'/'+opts.filefile+'.raw.'+opts.fileext, 'w', encoding='utf-8') as a_raw:
         a_raw.write(raw)
         
-    a = gp.layout.raw(raw, rules, dictionary,True)
+    rawlayout = gp.layout.raw(raw, rules, dictionary,True)
+    
+    d = gp.layout.declinopt(rawlayout,rules, optionkey='level')
+    
+    for i in d:
+        print(gp.layout.ref(rawlayout,rules,i))
+    
