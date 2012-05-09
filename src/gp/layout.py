@@ -133,20 +133,40 @@ def raw(raw_data, rules, dictionary, debug=False):
                         layout[-1].update(line=line)
                         # Now the start and end column of the match.
                         layout[-1].update(column=e.span())
-                        
+                        # Now you want to add css names based on key. However,
+                        # you want to know if a section comes immediately after
+                        # a chapter, so you can handle the vertical spaces
+                        # between those titles in the css file of your html.
                         _key = declaration_parser(fi[i], rules, dictionary)['key']
                         try:
                             _previouskey = layout[-2]['key']
                         except:
                             _previouskey = None            
                         if previousline + 1 == line and _previouskey and rules[_previouskey]['options'].get('level',None) and rules[_key]['options'].get('level',None):
+                            # If key follows previouskey immediately, you want
+                            # css name to be the concatenation of the two.
                             layout[-1].update(css=_key+_previouskey)
                         elif rules[_key]['options'].get('level',None) :
                             layout[-1].update(css=_key)
-                        i += 1
+                        # Now you want to include the nr of key:
+                        c = 0
+                        k = -1
+                        loop = True
+                        while loop:
+                            try:
+                                if layout[k]['key'] == _key:
+                                    c += 1
+                                    k -= 1
+                                else:
+                                    k -= 1
+                            except:
+                                loop = False
+                        layout[-1].update(nr=c)
                         
-                        if rules[_key]['options'].get('level',None):
-                            layout[-1].update(ref=ref(layout,rules,layout[-1]['line']))
+#                       if rules[_key]['options'].get('level',None):
+#                           layout[-1].update(ref=ref(layout,rules,layout[-1]['line']))
+                            
+                        i += 1
                         
             else:
                 print('\rAnalyzing input file: {0}/{0} (100%)'.format(len(locnewlines)).ljust(61),end='')

@@ -65,6 +65,6 @@ if __name__ == "__main__":
     
     d = gp.layout.declinopt(rawlayout,rules, optionkey='level')
     
-    for i in d:
-        print(gp.layout.ref(rawlayout,rules,i))
+#   for i in d:
+#       print(gp.layout.ref(rawlayout,rules,i))
     
