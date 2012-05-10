@@ -74,12 +74,12 @@ def declaration_parser(declaration, rules, dictionary):
     
     return d
 
-def raw(raw_data, rules, dictionary, debug=False):
+def layout(data, rules, dictionary, debug=False, pr=False):
     '''Creates a raw dictionary of all the declarations.
     
     usage:
     layout[line]
-    , where line is the line of declaration in the raw_data.
+    , where line is the line of declaration in the data.
     
     For example:
     layout[1]
@@ -94,31 +94,34 @@ def raw(raw_data, rules, dictionary, debug=False):
     remaining keys are determined by rules
     '''
     # Since analization is a long process you want to import a saved layout if
-    # possible, and raw_data is identical to the one the save based on. 'load'
+    # possible, and data is identical to the one the save based on. 'load'
     # function will do that. You want to force analyzation if debug is True.
-    if not debug and load(raw_data):
-        layout = load(raw_data)
+    if not debug and load(data):
+        if pr == True:
+            print('\rGenerating layout using saved layout file...'.ljust(61),end='')
+        layout = load(data)
     else:
     # Now you want to define a list for your struct elements.
         layout = []
         
-        locnewlines = gnparser.locnewlines(raw_data)
+        locnewlines = gnparser.locnewlines(data)
         loc = 0
         line = 0
         j = 0
         while loc>=0:
-            loc = raw_data[j:].find('{')
+            loc = data[j:].find('{')
             if loc>=0:
                 previousline = line
-                line = gnparser.linenr(loc + j, raw_data)
+                line = gnparser.linenr(loc + j, data)
     
-                j = gnparser.locnewlines(raw_data)[line+1]
+                j = gnparser.locnewlines(data)[line+1]
     
                 # Since it can be a long process, you want to put a progress
                 # message.
-                print('\rAnalyzing input file: {0}/{1} ({2}%)'.format(line,len(locnewlines),round(line/len(locnewlines)*100,1)).ljust(61),end='')
+                if pr == True:
+                    print('\rGenerating layout: {0}/{1} ({2}%)'.format(line,len(locnewlines),round(line/len(locnewlines)*100,1)).ljust(61),end='')
                 # You want to get the content of the current line
-                _line = gnparser.line(line, raw_data)
+                _line = gnparser.line(line, data)
                 # Now you want to search for anything between {}-s.
                 p = re.compile(r'{.+?}')
                 # Since there can be more match, you want them all. 'fi' will
@@ -129,7 +132,7 @@ def raw(raw_data, rules, dictionary, debug=False):
                     for e in it:
                         # Add the data declaration_parser can get, first.
                         layout.append(declaration_parser(fi[i], rules, dictionary))
-                        # Now the current line number in raw_data.
+                        # Now the current line number in data.
                         layout[-1].update(line=line)
                         # Now the start and end column of the match.
                         layout[-1].update(column=e.span())
@@ -146,8 +149,6 @@ def raw(raw_data, rules, dictionary, debug=False):
                             # If key follows previouskey immediately, you want
                             # css name to be the concatenation of the two.
                             layout[-1].update(css=_key+_previouskey)
-                        elif rules[_key]['options'].get('level',None) :
-                            layout[-1].update(css=_key)
                         # Now you want to include the nr of key:
                         c = 0
                         k = -1
@@ -169,15 +170,17 @@ def raw(raw_data, rules, dictionary, debug=False):
                         i += 1
                         
             else:
-                print('\rAnalyzing input file: {0}/{0} (100%)'.format(len(locnewlines)).ljust(61),end='')
+                if pr == True:
+                    print('\rGenerating layout: {0}/{0} (100%)'.format(len(locnewlines)).ljust(61),end='')
         
         # You want to save the layout since it is a long process to get.
         # Moreover, future calls will be fast as hell...
-        save(raw_data, layout)
+        save(data, layout)
+    if pr == True:
         print('[DONE]'.rjust(7))
     return tuple(layout)
 
-def get(rawlayout, rules, startindex=0, endindex=None, nextonly=False, key=None, line=None, optionkey=None, optionvalue=None):
+def get(layout, rules, startindex=0, endindex=None, oneonly=False, key=None, line=None, optionkey=None, optionvalue=None):
     def get_option(key, rules, optionkey, optionvalue):
         if optionkey and optionvalue:
             if optionvalue == rules[key]['options'].get(optionkey, False):
@@ -189,35 +192,35 @@ def get(rawlayout, rules, startindex=0, endindex=None, nextonly=False, key=None,
             return None
            
     if not endindex:
-        endindex = len(rawlayout)
+        endindex = len(layout)
     
     result = []
     
     for i in range(startindex,endindex):
         
-        if key == rawlayout[i]['key'] and not line:
+        if key == layout[i]['key'] and not line:
             add = True
-        elif line == rawlayout[i]['line'] and not key:
+        elif line == layout[i]['line'] and not key:
             add = True
-        elif key == rawlayout[i]['key'] and line == rawlayout[i]['line']:
+        elif key == layout[i]['key'] and line == layout[i]['line']:
             add = True
-        elif not key and optionkey and get_option(rawlayout[i]['key'], rules, optionkey, optionvalue) and not line:
+        elif not key and optionkey and get_option(layout[i]['key'], rules, optionkey, optionvalue) and not line:
             add = True
-        elif not key and optionkey and get_option(rawlayout[i]['key'], rules, optionkey, optionvalue) and line == rawlayout[i]['line']:
+        elif not key and optionkey and get_option(layout[i]['key'], rules, optionkey, optionvalue) and line == layout[i]['line']:
             add = True
         else:
             add = False
 
-        if nextonly == True and add == True:
-            return tuple(i)
-        elif nextonly == False and add == True:
+        if oneonly == True and add == True:
+            return i
+        elif oneonly == False and add == True:
             result.append(i)
     return tuple(result)
 
-def line(raw_data, rules, dictionary, linenr):
-    _rawlayout = raw(raw_data,rules,dictionary)
-    _declarations = get(_rawlayout, rules, line=linenr, startindex=0, endindex=None, nextonly=False)
-    _line = gnparser.line(linenr,raw_data)
+def line(data, rules, dictionary, linenr):
+    _layout = layout(data,rules,dictionary)
+    _declarations = get(_layout, rules, line=linenr, startindex=0, endindex=None, oneonly=False)
+    _line = gnparser.line(linenr,data)
     remaining = len(_declarations)
     done = 0
     generating = True
@@ -233,16 +236,16 @@ def line(raw_data, rules, dictionary, linenr):
         # opening phase
         elif remaining > 0 and done == 0:
             s = None
-            e = _rawlayout[_declarations[done]]['column'][0]
+            e = _layout[_declarations[done]]['column'][0]
             add = True
         # inter phase
         elif remaining > 0 and done > 0:
-            s = _rawlayout[_declarations[done-1]]['column'][1]
-            e = _rawlayout[_declarations[done]]['column'][0]
+            s = _layout[_declarations[done-1]]['column'][1]
+            e = _layout[_declarations[done]]['column'][0]
             add = True
         # end phase
         elif remaining == 0 and done > 0:
-            s = _rawlayout[_declarations[done-1]]['column'][1]
+            s = _layout[_declarations[done-1]]['column'][1]
             e = None
             add = False
             generating = False
@@ -256,114 +259,106 @@ def line(raw_data, rules, dictionary, linenr):
 
     return tuple(content)
 
-def declinopt(rawlayout,rules, optionkey):
-    _list = get(rawlayout, rules, optionkey=optionkey, startindex=0, endindex=None, nextonly=False)
+def hasoption(rules,key,optionkey,optionvalue=None):
+    if rules[key]['options'].get(optionkey,None):
+        if optionvalue and rules[key]['options'][optionkey] == optionvalue:
+            return True
+        elif not optionvalue:
+            return True
+        else:
+            return False
+    else:
+        return False
+    
+def optionvalues(layout, rules, optionkey='level', hierarchy=True, optionvalue=None):
+    _list = []
     _set = set()
-    for i in _list:
-        _set.add(rawlayout[i]['line'])
-    return sorted(_set)
-
-def decopt(rawlayout, rules, optionkey, hierarchy=False):
-    _list = declinopt(rawlayout, rules, optionkey=optionkey)
-    d={}
-    _set = set()
-    for i in _list:
-        for j in range(len(rawlayout)):
-            if rawlayout[j]['line'] == i and rules[rawlayout[j]['key']]['options'].get(optionkey, None): 
-                d[i] = rules[rawlayout[j]['key']]['options'][optionkey]
-                _set.add(rules[rawlayout[j]['key']]['options'][optionkey])
+    for i in range(len(layout)):
+        if hasoption(rules,layout[i]['key'],optionkey,optionvalue=optionvalue) == True:
+            value = rules[layout[i]['key']]['options'][optionkey]
+            _list.append(value)
+            _set.add(value)
+        else:
+            _list.append(None)
     if hierarchy:
         _hierarchy = sorted(_set)
-        for j in d:
-            d[j] = _hierarchy.index(d[j])
-    return d
+        for i in range(len(_list)):
+            if _list[i]:
+                _list[i] = _hierarchy.index(_list[i])
+    return _list
 
-def option(rawlayout,rules,line, hierarchy=False, optionkey='class'):
-    _declinesbyoption = declinopt(rawlayout,rules, optionkey=optionkey)
-    if line < min(_declinesbyoption):
-        return None
-    elif line in _declinesbyoption:
-        return None
-    elif line > max(_declinesbyoption):
-        _line = _declinesbyoption[len(_declinesbyoption)-1]
-        return decopt(rawlayout, rules, optionkey, hierarchy=hierarchy)[_line]
-    else:
-        for i in range(len(_declinesbyoption)):
-            _line = _declinesbyoption[i]
-            _nextline = _declinesbyoption[i+1]
-            if _line < line and _nextline > line:
-                return decopt(rawlayout, rules, optionkey, hierarchy=hierarchy)[_line]
-
-def ref(rawlayout,rules, line, hierarchy=True, optionkey='level'):
-    
-    _declinesbyoption = declinopt(rawlayout,rules, optionkey=optionkey)
-    
-    def parent(rawlayout,rules, line, hierarchy=True, optionkey='level'):
-        i = _declinesbyoption.index(line)
-        v0 = decopt(rawlayout,rules,optionkey,hierarchy=hierarchy)[line]
+def location(layout, rules, ind, continous='chapter', hierarchy=True, optionkey='level', optionvalue=None):
+    def parent(layout, rules, ind, optionkey=optionkey, hierarchy=hierarchy, optionvalue=optionvalue):
+        v0 = optionvalues(layout, rules, optionkey=optionkey, hierarchy=hierarchy, optionvalue=optionvalue)[ind]
+        i = -1
         s = True
-        while s:
+        while s == True and ind+i >= 0:
+            v1 = optionvalues(layout, rules, optionkey=optionkey, hierarchy=hierarchy, optionvalue=optionvalue)[ind+i]
             try:
-                _line = _declinesbyoption[i-1]
-                v1 = decopt(rawlayout,rules,optionkey,hierarchy=hierarchy)[_line]
                 if v1 < v0:
-                    return (v0, v1, _line)
+                    return (v0, v1, ind+i)
                 else:
                     i -= 1
             except:
-                s = False
-    
-    def count(rawlayout, rules, line, startline=None):
-        def startlineind(rawlayout,startline):
-            for i in rawlayout:
-                if i['line'] >= startline:
-                    return rawlayout.index(i)
-            return 0
-        
-        for i in rawlayout:
-            if i['line'] == line:
-                _key =  i['key']
-        
-        if startline:
-            j = startlineind(rawlayout,startline)
-        else:
-            j = 0
-        
-        c = 1
-        
-        for k in range(j,len(rawlayout)):
-            if rawlayout[k]['key']==_key and rawlayout[k]['line']==line:
-                return c
-            elif rawlayout[k]['key']==_key:
-                c += 1
-    
-    
-    ref = []
+                i -= 1
+    def count(layout, rules, ind, continous=continous, hierarchy=hierarchy, optionkey=optionkey, optionvalue=optionvalue):
+        _parent = parent(layout, rules, ind, optionkey=optionkey, hierarchy=hierarchy, optionvalue=optionvalue)
+        try:
+            if layout[ind]['key'] in continous:
+                success = True
+            else:
+                success = False
+        except:
+            success = False
+                
+        if success == True:
+            return layout[ind]['nr']
+        elif _parent:
+            i = -1
+            while _parent[2]+i > 0:
+                v = optionvalues(layout, rules, optionkey=optionkey, hierarchy=hierarchy, optionvalue=optionvalue)[_parent[2]+i]
+                if v == _parent[0]:
+                    return layout[ind]['nr'] - layout[_parent[2]+i]['nr']
+                else:
+                    i -= 1
+        return layout[ind]['nr']
+
+    try:
+        _key = layout[ind]['key']
+    except:
+        raise Warning('Wrong index !')
+
+
+    _location = []
     loop = True
     while loop:
-        if line in _declinesbyoption:
-            _parent = parent(rawlayout, rules, line, hierarchy=hierarchy, optionkey=optionkey)
-            
-            _count = count(rawlayout, rules, line)
-            
-            if _parent:
-                _countfromparent = count(rawlayout, rules, line, startline=_parent[2])
-                if _count == _countfromparent:
-                    ref.insert(0,_count)
-                else:
-                    ref.insert(0,(_count, _countfromparent))
-            else:
-                ref.insert(0,_count)
-            
-            if _parent:
-                line = _parent[2]
-                d = _parent[0] - _parent[1]
-                while d > 1:
-                    ref.insert(0,None)
-                    d -= 1
-            else:
-                loop = False
+        _parent = parent(layout, rules, ind, optionkey=optionkey, hierarchy=hierarchy, optionvalue=optionvalue)
+        _count = count(layout, rules, ind, continous=continous, hierarchy=hierarchy, optionkey=optionkey, optionvalue=optionvalue)
+        
+        _location.insert(0,_count)
+        
+        if _parent:
+            ind = _parent[2]
+            d = _parent[0] - _parent[1]
+            while d > 1:
+                _location.insert(0,None)
+                d -= 1
         else:
             loop = False
-    
-    return tuple(ref)
+
+    return tuple(_location)
+        
+def css(layout, rules, ind, argind):
+    css = ''
+    if layout[ind].get('css',None):
+        css = layout[ind]['css']
+    else:
+        css = layout[ind]['key']
+    if argind and argind != 0:
+        try:
+            arg = rules[layout[ind]['key']][min(argind,rules[layout[ind]['key']]['reqargs']+rules[layout[ind]['key']]['optargs'])]
+        except:
+            arg = ''
+        if arg != css:
+            css = css + arg
+    return css

@@ -5,7 +5,7 @@ import gp
 
 from opts import declarations, decpath
 
-def raw(inputdata):
+def raw(inputdata, pr=True):
     def trimnewline(content,newlinecount=2,replacestring='\\n'):
         r = True
         while r:
@@ -21,6 +21,8 @@ def raw(inputdata):
         content = re.sub(r'}\n{2,}',r'}\n',content)
         return content
 
+    if pr == True:
+        print('\rMaking raw file: Initial replaces'.ljust(61),end='')
     # You want to remove the zero width no-break space character at
     # the beginning of your inputdata.
     _raw = re.sub('^\ufeff',r'',inputdata)
@@ -28,18 +30,23 @@ def raw(inputdata):
     # empty line. This is necessary before you can continue.
     _raw = re.sub('}\n(?!\n)',r'}\n\n',_raw)
     _raw = re.sub('\n+{',r'\n\n{',_raw)
+    
+    _rawlen = len(_raw)
 
     with open(declarations, encoding='utf-8') as a_file:
-        _rules = gp.decrules(a_file.read())
+        _rules = gp.rules(a_file.read())
     _dictionary = gp.declarations(_raw, decpath)
     _locnewlines = gnparser.locnewlines(inputdata)
     loc_dec = 0
     loc1 = 0
     raw = ''
     row = False
-    while loc_dec>=0:
-
+    while loc_dec>=0:        
         loc0 = loc1
+        
+        if pr == True:
+            print('\rMaking raw file: {0}/{1} ({2}%)'.format(loc0,_rawlen,round(loc0/_rawlen*100,1)).ljust(61),end='')
+        
         loc_dec = _raw[loc0+1:].find('{')
         if loc_dec < 0:
             loc1 = None
@@ -76,7 +83,10 @@ def raw(inputdata):
             p = re.compile(r'  ')
             r = p.search(raw)
             if r:
-                raw = p.sub(r' ',raw)        
+                raw = p.sub(r' ',raw)
+    
+    if pr == True:
+        print('\rMaking raw file: {0}/{0} (100%)'.format(_rawlen).ljust(61),end='')
 
     return raw
 

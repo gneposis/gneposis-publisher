@@ -3,10 +3,7 @@
 {COPYRIGHT}
 The Project Gutenberg EBook of Pride and Prejudice, by Jane Austen
 
-This eBook is for the use of anyone anywhere at no cost and with
-almost no restrictions whatsoever.  You may copy it, give it away or
-re-use it under the terms of the Project Gutenberg License included
-with this eBook or online at www.gutenberg.org
+This eBook is for the use of anyone anywhere at no cost and with almost no restrictions whatsoever.  You may copy it, give it away or re-use it under the terms of the Project Gutenberg License included with this eBook or online at www.gutenberg.org
 
 Posting Date: August 26, 2008 [EBook #1342]
 Release Date: June, 1998
@@ -16,8 +13,7 @@ Language: English
 
 Produced by Anonymous Volunteers
 
-Updated editions will replace the previous one---the old editions
-will be renamed.
+Updated editions will replace the previous one---the old editions will be renamed.
 
 For full license visit http://www.gutenberg.org
 

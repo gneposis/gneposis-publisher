@@ -5,9 +5,9 @@ import operator
 
 import gnparser
 
-def decrules(propdata):
+def rules(propdata):
     '''Parses rules from a rules file'''
-    def get_rawdata():
+    def raw():
         '''This function does the first phase:
         It separates a declaration line to declaration, format, and options.
         
@@ -51,12 +51,12 @@ def decrules(propdata):
     # a nice dictionary of the rules. You want to create a new dictionary for
     # the rules, and add the declarations one-by-one to it, nicely structured.
     prop = {}
-    propkeys = list(get_rawdata().keys())
+    propkeys = list(raw().keys())
     for k in propkeys:
         prop[k] = {}
         # You want to work with the parts of rawdata, so you get them.
-        propformat = get_rawdata()[k]['format']
-        propoptions = get_rawdata()[k]['options']
+        propformat = raw()[k]['format']
+        propoptions = raw()[k]['options']
         # First you want to start with the format part. You want to know how
         # many required arguments are (if any) and how many optional arguments
         # can follow them (if any).
@@ -121,13 +121,13 @@ def decrules(propdata):
                 i += s.end()    
     return prop
 
-def declarations_dictionary(declarationspath):
+def declarations_dictionary(decpath):
     ''' Creates the dictionary of declarations based on files in <gp.py_path>/data/languages/declarations/'''
     # You want to create a dictionary for upcoming data.
     dictionary = {}
     # Now you would like to get data from all declarations file of all
     # languages, so get their path one-by-one.
-    for dict_file in glob.glob(declarationspath):
+    for dict_file in glob.glob(decpath):
         # You need to split filename and get its language key.
         path_split = os.path.split(dict_file)
         lang = path_split[1]
@@ -159,6 +159,7 @@ def declarations_dictionary(declarationspath):
                     i += s.end()
     return dictionary
 
+
 def language(inputdata, declarationspath):
     ''' Gets language key from beginning of inputdata:
     
@@ -189,211 +190,8 @@ def language(inputdata, declarationspath):
                     if declarations_dictionary(declarationspath)[k][l] == 'author' or declarations_dictionary(declarationspath)[k][l] == 'title':
                         return k
 
-def declarations(inputdata, declarationspath):
+def declarations(inputdata, decpath):
     ''' Returns the declarations dictionary for inputdata'''
     # You want this function to return the dictionary for the document language
     # only.
-    return declarations_dictionary(declarationspath)[language(inputdata, declarationspath)]
-
-def dec_opt(rules,option):
-    '''Returns the set of all the declaration keys which has a
-    given option:
-    
-    For example:
-    g_dec_by_opt(<rules>,'level')
-    can return:
-    {'chapter', 'section', 'paragraph', 'stars', 'part', 'book'}
-    '''
-    s = set(rules.keys())
-    d = set()      
-    for e in s:
-        if rules[e]['options'].get(option,None):
-            d.add(e)
-    return d
-
-def struct(rawdata, rules, dictionary):
-    def rawstruct(rawdata, rules, dictionary):
-        '''Creates a raw dictionary of all the declarations.
-        
-        usage:
-        rawstruct[line]
-        , where line is the line of declaration in the rawdata.
-        
-        For example:
-        rawstruct[1]
-        returns
-        {'nextsamedeclaration': None, 'nextdeclaration': 2, 'name': 'Jane Austen',
-            'key': 'author', 'sortname': 'Austen, Jane'}
-        
-        key shows the declaration key
-        nextdeclaration shows the line of the next declaration.
-        nextsamedeclaration shows the line of the next identical declaration
-        if any.
-        remaining keys are determined by rules
-        '''
-        def decparser(declaration, rules, dictionary):
-            '''Parses a declaration string.
-            
-            For example
-            decparser('{CHAPTER First Chapter :: The Dog}', <rules>, <dictionary>)
-            can return
-            {'subtitle': 'The Dog', 'key': 'chapter', 'title': 'First Chapter'}
-            if rules and dictionary are default and english.
-            Same return can be produced using a hungarian dictionary and the declaration:
-            '{FEJEZET First Chapter :: The Dog}'
-            '''
-            def key(declaration, dictionary):
-                '''Parses the key of the declaration.'''
-                # You want to search for an "{" followed by any sequence until a
-                # whitespace or a closin "}".
-                p = re.compile(r'{(?P<key>.+?)[\s}]')
-                s = p.search(declaration)
-                # Now you have the declaration which has to be translated using
-                # the dictionary. Plus you also want to return the index of the end of
-                # the key.
-                return (dictionary[s.group('key')], s.end())
-            # Now let's start to parse your declaration! A new dictionary for it
-            # the key including
-            d = {}
-            key = key(declaration, dictionary)
-            d['key'] = key[0]
-            # You want to point your index _after_ the declaration key in your
-            # declaration string. 
-            i = key[1]
-            # You want to know if the arguments are required or optional ones, and if
-            # all the required arguments has been declared.
-            rule = rules[key[0]]
-            # So r will show how many required argument remained, similar to o for
-            # optionals. a shows the total of arguments.
-            r = rule['reqargs']
-            o = rule['optargs']
-            a = r + o
-            while r + o > 0:
-                # You get the name of the current argument. Index: Total - current + 1.
-                name = rule[a-r-o+1]
-                # You search for a complete sequence excluding whitespaces followed by
-                # a ":" or a closing "}".
-                s = re.search(r'\s*(?P<name>.+?)\s*[:}]',declaration[i:])
-                if s:
-                    # If match then you add the argument to the dictionary, increment
-                    # the search index, and check if r or o should be decreased by one.
-                    d[name] = s.group('name')
-                    i += s.end()+1
-                    if r > 0:
-                        r -= 1
-                    else:
-                        o -= 1
-                else:
-                    # If not all required arguments has benn set, you want to raise an
-                    # exception.
-                    if r > 0:
-                        raise Warning('Required argument missing in '+declaration+'!')
-                    o -= 1
-            return d
-        # Now you want to define a list for your struct elements.
-        rawstruct = {}
-        # Now you want to get the locations of all the newlines of rawdata and
-        # parse them one-by-one if they contain a declaration.
-        locnewlines = gnparser.locnewlines(rawdata)
-        for line in locnewlines:
-            if rawdata[locnewlines[line]] == '{':
-                # You want to add all the data gnparser could get of the
-                # declaration itself...
-                rawstruct[line] = decparser(gnparser.line(line, rawdata), rules, dictionary)
-        return rawstruct
-    
-    def declines(rawstruct):
-        '''Returns a sorted list of the line numbers of declarations.
-        Useful to iterate elements of rawstruct.'''
-        return sorted(list(rawstruct.keys()))
-    
-    def ind(line, dec_lines):
-        '''Returns the index of a declaration by line'''
-        if line in dec_lines:
-            return dec_lines.index(line)
-    
-    def nextdecind(rawstruct, startline, key=None):
-        '''Returns the index of the next declaration of a given key (any if None)'''
-        _lines = declines(rawstruct)
-        i = _lines.index(startline)
-        for line in _lines[i+1:]:
-            if not key or key == rawstruct[line]['key']:
-                return ind(line,_lines)
-            
-    def decs(rawstruct, key):
-        '''Returns the tuple of linenumbers starting with declaration
-        of the given key.'''
-        _lines = declines(rawstruct)
-        l = []
-        for line in _lines:
-            if key == rawstruct[line]['key']:
-                l.append(line)
-        return tuple(l) 
-    
-    def hierarchy(rawstruct, rules, option='level'):
-        '''Returns the sorted tuple of declarations of rawstruct
-        based on a given option ('level' by defualt.)'''
-        def s_rules(rawstruct):
-            '''Returns a set of all different declaration keys of rawstruct.'''
-            s = set()
-            for line in declines(rawstruct):
-                s.add(rawstruct[line]['key'])
-            return s
-        # You want the intersection of the available declaration keys, and the ones
-        # in rawstruct. Plus you want to include option values of them in a
-        # dictionary.
-        l = dec_opt(rules,option) & s_rules(rawstruct)
-        d={}
-        for i in l:
-            d[i] = rules[i]['options'][option]
-        # Now you return the sorted tuple sorting based on values
-        return tuple(sorted(d, key=d.get))
-    # Now you want to create the structure data. Lets start some veriables to
-    # make code easier and faster to compute:
-    struct = []
-    _rawstruct = rawstruct(rawdata, rules, dictionary)
-    _lines = declines(_rawstruct)
-    _hierarchy = hierarchy(_rawstruct, rules)
-    # Now you want to start parsing all the declarations one by one:
-    for line in _lines:
-        # Again, some variables
-        _dec = _rawstruct[line]['key']
-        _decs = decs(_rawstruct, _dec)
-        # First you want to add data from rawdata
-        struct.append(_rawstruct[line])
-        # Now the corresponding line number in the rawdata
-        struct[-1].update(line=line)
-        # The index of the next declaration
-        struct[-1].update(nextany=nextdecind(_rawstruct, line))
-        # The index of the next declaration which has the same key
-        struct[-1].update(nextsame=nextdecind(_rawstruct, line, key=_dec))
-        # Now the index of the current declaration among all declaratons with
-        # same key.
-        struct[-1].update(decindex=(_decs.index(line)))
-        # Now the level if possible. To get this, the program will check which
-        # body levels exists, sorts them, and returns the index of the current
-        # declaration in that hierarchy.
-        if _dec in _hierarchy:
-            struct[-1].update(level=_hierarchy.index(_dec))
-    return tuple(struct)
-
-def deccounts(struct, rules):
-    '''Returns the count of declarations in a dictionary.'''
-    def counter(struct, key):
-        '''Counts the occassions of a declaration in struct by key.'''
-        n = 0
-        for i in range(len(struct)):
-            if key == struct[i]['key']:
-                n += 1
-        return n
-    d={}
-    for key in rules.keys():
-        if counter(struct,key) > 0:
-            d[key] = counter(struct,key)
-    return d
-
-def dec_ind(struct, key, name):
-    '''Returns the first occassion of a given key in struct.'''
-    for i in range(len(struct)):
-        if key == struct[i]['key']:
-            return struct[i].get(name,None)
+    return declarations_dictionary(decpath)[language(inputdata, decpath)]

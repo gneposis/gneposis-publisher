@@ -23,33 +23,41 @@ import opts
 
 import gp.layout
 
-def kindle(data, struct):
+def kindle(data, layout, rules):
     from gpconverter import kindle
     from gpconverter import utf
-    a = kindle.body(data,struct)
-    return a
+    body = kindle.body(data,layout, rules)
+    return body
     
 
 if __name__ == "__main__":
     print('\ngneposis-publisher 0.1alpha by Adam Szieberth, 2012')
     print('='*67)
-
-    print('\nAnalyzing input file...'.ljust(61),end='')
-    with open(opts.declarations, encoding='utf-8') as a_file:
-        rules = gp.decrules(a_file.read())
+    print('\nAnalyzing input file...'.upper())
+    print('- '*33+'-')
     
     with open(opts.file, encoding='utf-8') as a_file:
         raw = gpconverter.raw(a_file.read())
-        
+    with open(opts.filepath+'/'+opts.filefile+'.raw.'+opts.fileext, 'w', encoding='utf-8') as a_raw:
+        a_raw.write(raw)
+    print('[DONE]'.rjust(7))
+
+    print('\rMaking rules...'.ljust(61),end='')
+    with open(opts.declarations, encoding='utf-8') as a_file:
+        rules = gp.rules(a_file.read())
+    print('[DONE]'.rjust(7))
+
+    print('\rGenerating dictionary for language: {0}'.format(gp.language(raw,opts.decpath).upper()).ljust(61),end='')
     dictionary = gp.declarations(raw, opts.decpath)
-    
     print('[DONE]'.rjust(7))
     
-#   if opts.mode == 'kindle':
-#       print('\nCreating kindle body file...'.ljust(61),end='')
-#       with open(opts.ensure_dir(opts.filepath+'/'+opts.mode)+'/'+opts.filefile+'.html', 'w', encoding='utf-8') as a_body:
-#           a_body.write(kindle(raw, struct))
-#       print('[DONE]'.rjust(7))
+    layout = gp.layout.layout(raw, rules, dictionary,pr=True)
+    
+    if opts.mode == 'kindle':
+        print('\nCreating kindle body file...'.upper())
+        print('- '*33+'-')
+        with open(opts.ensure_dir(opts.filepath+'/'+opts.mode)+'/'+opts.filefile+'.html', 'w', encoding='utf-8') as a_body:
+            a_body.write(kindle(raw, layout, rules))
         
         
     
@@ -57,14 +65,3 @@ if __name__ == "__main__":
 #===============================================================================
 # test
 #===============================================================================
-
-    with open(opts.filepath+'/'+opts.filefile+'.raw.'+opts.fileext, 'w', encoding='utf-8') as a_raw:
-        a_raw.write(raw)
-        
-    rawlayout = gp.layout.raw(raw, rules, dictionary,True)
-    
-    d = gp.layout.declinopt(rawlayout,rules, optionkey='level')
-    
-#   for i in d:
-#       print(gp.layout.ref(rawlayout,rules,i))
-    
