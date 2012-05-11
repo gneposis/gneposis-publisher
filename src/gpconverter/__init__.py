@@ -1,6 +1,6 @@
 import re
 
-import gnparser
+import gntools
 import gp
 
 from opts import declarations, decpath
@@ -36,7 +36,7 @@ def raw(inputdata, pr=True):
     with open(declarations, encoding='utf-8') as a_file:
         _rules = gp.rules(a_file.read())
     _dictionary = gp.declarations(_raw, decpath)
-    _locnewlines = gnparser.locnewlines(inputdata)
+    _locnewlines = gntools.locnewlines(inputdata)
     loc_dec = 0
     loc1 = 0
     raw = ''

@@ -3,7 +3,7 @@ import os
 import re
 import operator
 
-import gnparser
+import gntools
 
 def rules(propdata):
     '''Parses rules from a rules file'''

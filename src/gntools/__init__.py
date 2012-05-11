@@ -3,6 +3,8 @@ import unicodedata
 import hashlib
 from functools import partial
 
+__all__ = ['roman']
+
 def restg(inputstring):
     string = inputstring
     string = string.replace('\\','\\\\')

@@ -1,6 +1,6 @@
 import re
 
-import gnparser
+import gntools
 
 from .pickler import load,save
         
@@ -104,7 +104,7 @@ def layout(data, rules, dictionary, debug=False, pr=False):
     # Now you want to define a list for your struct elements.
         layout = []
         
-        locnewlines = gnparser.locnewlines(data)
+        locnewlines = gntools.locnewlines(data)
         loc = 0
         line = 0
         j = 0
@@ -112,16 +112,16 @@ def layout(data, rules, dictionary, debug=False, pr=False):
             loc = data[j:].find('{')
             if loc>=0:
                 previousline = line
-                line = gnparser.linenr(loc + j, data)
+                line = gntools.linenr(loc + j, data)
     
-                j = gnparser.locnewlines(data)[line+1]
+                j = gntools.locnewlines(data)[line+1]
     
                 # Since it can be a long process, you want to put a progress
                 # message.
                 if pr == True:
                     print('\rGenerating layout: {0}/{1} ({2}%)'.format(line,len(locnewlines),round(line/len(locnewlines)*100,1)).ljust(61),end='')
                 # You want to get the content of the current line
-                _line = gnparser.line(line, data)
+                _line = gntools.line(line, data)
                 # Now you want to search for anything between {}-s.
                 p = re.compile(r'{.+?}')
                 # Since there can be more match, you want them all. 'fi' will
@@ -220,7 +220,7 @@ def get(layout, rules, startindex=0, endindex=None, oneonly=False, key=None, lin
 def line(data, rules, dictionary, linenr):
     _layout = layout(data,rules,dictionary)
     _declarations = get(_layout, rules, line=linenr, startindex=0, endindex=None, oneonly=False)
-    _line = gnparser.line(linenr,data)
+    _line = gntools.line(linenr,data)
     remaining = len(_declarations)
     done = 0
     generating = True

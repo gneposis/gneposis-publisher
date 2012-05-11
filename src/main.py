@@ -14,7 +14,7 @@ http://sam.zoy.org/wtfpl/COPYING for more details.
 '''
 
 import sys
-import gnparser
+import gntools
 import gp
 import re
 

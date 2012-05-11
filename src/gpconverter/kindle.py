@@ -1,7 +1,7 @@
 import re
 
 import gp
-import gnparser
+import gntools
 from gpconverter import utf
 import opts
 
@@ -31,7 +31,7 @@ def body(data, layout, rules):
             page = '<div style="page-break-before:always"></div>\n'
             for line in range(_start,_end):
                 _css = gp.layout.css(layout,rules,i,None)
-                _line = utf(gnparser.line(line,data))
+                _line = utf(gntools.line(line,data))
                 if _line == '':
                     _css = _css + 'empty'
                     _line = r'&nbsp;'

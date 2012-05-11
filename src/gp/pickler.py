@@ -1,7 +1,7 @@
 import pickle
 
 import opts
-from gnparser import md5
+from gntools import md5
 
 def save(hashdata, data):
     pickledata = (md5(hashdata),data)
