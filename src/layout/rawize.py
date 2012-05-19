@@ -1,11 +1,10 @@
 import re
+from core.opts import decmainpath, decpath
+from .declarat import dictionary, parser
+from .rules import rules
 
-import gntools
-import gp
 
-from opts import declarations, decpath
-
-def raw(inputdata, pr=True):
+def rawize(inputdata, pr=True):
     def trimnewline(content,newlinecount=2,replacestring='\\n'):
         r = True
         while r:
@@ -33,10 +32,9 @@ def raw(inputdata, pr=True):
     
     _rawlen = len(_raw)
 
-    with open(declarations, encoding='utf-8') as a_file:
-        _rules = gp.rules(a_file.read())
-    _dictionary = gp.declarations(_raw, decpath)
-    _locnewlines = gntools.locnewlines(inputdata)
+    with open(decmainpath, encoding='utf-8') as a_file:
+        _rules = rules(a_file.read())
+    _dictionary = dictionary(_raw, decpath)
     loc_dec = 0
     loc1 = 0
     raw = ''
@@ -53,7 +51,7 @@ def raw(inputdata, pr=True):
         else:
             loc1 = loc0+loc_dec+1
 
-        _key = gp.layout.declaration_parser(_raw[loc0:loc1], _rules, _dictionary)['key']
+        _key = parser(_raw[loc0:loc1], _rules, _dictionary)['key']
         row = _rules[_key]['options'].get('row',False)
         content = _raw[loc0:loc1]
 
@@ -89,23 +87,3 @@ def raw(inputdata, pr=True):
         print('\rMaking raw file: {0}/{0} (100%)'.format(_rawlen).ljust(61),end='')
 
     return raw
-
-def utf(inputdata):
-    '''Replaces parts (characters) of inputdata to their utf representative.'''
-    # You want to replace dashes:
-    inputdata = inputdata.replace('---','—') # Em dash
-    inputdata = inputdata.replace('--','–') # Then en dash
-    # You define a function to convert full quotes such {Q Lorem ipsum} to “Lorem
-    # ipsum”. You call the function immediately.
-    def conv_fullquote(inputdata):
-        p = re.compile(r'"(.+?)"')
-        r = re.sub(p, r'“\1”', inputdata)
-        return r
-    inputdata = conv_fullquote(inputdata)
-    # Now you want the remaining "s to be converted to “s.
-    inputdata = re.sub(r'"', r'“', inputdata)
-    # Now you want to convert other quotemarks:
-    inputdata = inputdata.replace(',,','„')
-    inputdata = inputdata.replace("''","”")
-    
-    return inputdata

@@ -12,23 +12,15 @@ and/or modify it under the terms of the Do What The Fuck You Want
 To Public License, Version 2, as published by Sam Hocevar. See
 http://sam.zoy.org/wtfpl/COPYING for more details.
 '''
-
 import sys
-import gntools
-import gp
-import re
 
-import gpconverter
-import opts
-
-import gp.layout
-
-def kindle(data, layout, rules):
-    from gpconverter import kindle
-    from gpconverter import utf
-    body = kindle.body(data,layout, rules)
-    return body
-    
+from core.opts import decmainpath, decpath, ensure_dir, file, fileext, filefile, filepath, mode
+from formats import kindle
+from layout.create import layout
+from layout.declarat import dictionary
+from layout.language import language
+from layout.rawize import rawize
+from layout.rules import rules
 
 if __name__ == "__main__":
     print('\ngneposis-publisher 0.1alpha by Adam Szieberth, 2012')
@@ -36,28 +28,28 @@ if __name__ == "__main__":
     print('\nAnalyzing input file...'.upper())
     print('- '*33+'-')
     
-    with open(opts.file, encoding='utf-8') as a_file:
-        raw = gpconverter.raw(a_file.read())
-    with open(opts.filepath+'/'+opts.filefile+'.raw.'+opts.fileext, 'w', encoding='utf-8') as a_raw:
+    with open(file, encoding='utf-8') as a_file:
+        raw = rawize(a_file.read())
+    with open(filepath+'/'+filefile+'.raw.'+fileext, 'w', encoding='utf-8') as a_raw:
         a_raw.write(raw)
     print('[DONE]'.rjust(7))
 
     print('\rMaking rules...'.ljust(61),end='')
-    with open(opts.declarations, encoding='utf-8') as a_file:
-        rules = gp.rules(a_file.read())
+    with open(decmainpath, encoding='utf-8') as a_file:
+        rules = rules(a_file.read())
     print('[DONE]'.rjust(7))
 
-    print('\rGenerating dictionary for language: {0}'.format(gp.language(raw,opts.decpath).upper()).ljust(61),end='')
-    dictionary = gp.declarations(raw, opts.decpath)
+    print('\rGenerating dictionary for language: {0}'.format(language(raw,decpath).upper()).ljust(61),end='')
+    dictionary = dictionary(raw, decpath)
     print('[DONE]'.rjust(7))
     
-    layout = gp.layout.layout(raw, rules, dictionary,pr=True)
+    layout = layout(raw, rules, dictionary,pr=True)
     
-    if opts.mode == 'kindle':
+    if mode == 'kindle':
         print('\nCreating kindle body file...'.upper())
         print('- '*33+'-')
-        with open(opts.ensure_dir(opts.filepath+'/'+opts.mode)+'/'+opts.filefile+'.html', 'w', encoding='utf-8') as a_body:
-            a_body.write(kindle(raw, layout, rules))
+        with open(ensure_dir(filepath+'/'+mode)+'/'+filefile+'.html', 'w', encoding='utf-8') as a_body:
+            a_body.write(kindle.body(raw, layout, rules))
         
         
     
