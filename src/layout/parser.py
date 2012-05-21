@@ -1,3 +1,6 @@
+import re
+from gntools.numtext.hu import to_text_ord
+
 def get(layout, rules, startindex=0, endindex=None, oneonly=False, key=None, line=None, optionkey=None, optionvalue=None):
     def get_option(key, rules, optionkey, optionvalue):
         if optionkey and optionvalue:
@@ -138,3 +141,23 @@ def css_name(layout, rules, ind, argind):
         if arg != css:
             css = css + arg
     return css
+
+cont = set()
+
+def contains_num(layout, rules, language, optionkey='level'):
+    global cont
+    ind_list = get(layout=layout, rules=rules, optionkey=optionkey)
+    result = []
+    for i in ind_list:
+        contentkey = layout[i]['key']
+        content = layout[i]['title'].lower()
+        loc1 = location(layout, rules, i, continous=None, hierarchy=True, optionkey=optionkey, optionvalue=None)[-1]
+        loc2 = location(layout, rules, i, continous=contentkey, hierarchy=True, optionkey=optionkey, optionvalue=None)[-1]
+        if re.search(to_text_ord(loc1),content):
+            result.append(loc1)
+        elif re.search(to_text_ord(loc2),content):
+            cont.add(contentkey)
+            result.append(loc2)
+        else:
+            result.append(None)
+    return result

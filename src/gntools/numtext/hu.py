@@ -1,5 +1,3 @@
-import sys
-
 from math import pow
 
 class OutOfRangeError(ValueError): pass
@@ -264,3 +262,40 @@ def from_text(text):
         result = int(result)
                                      
     return result
+
+hu_ord_map = (('billió', 'billiomodik'),
+              ('milliárd', 'milliárdodik'),
+              ('millió', 'milliomodik'),
+              ('ezer', 'ezredik'),
+              ('száz', 'századik'),
+              ('kilencven', 'kilencvenedik'),
+              ('nyolcvan', 'nyolcvanadik'),
+              ('hetven', 'hetvenedik'),
+              ('hatvan', 'hatvanadik'),
+              ('ötven', 'ötvenedik'),
+              ('negyven', 'negyvenedik'),
+              ('harminc', 'harmincadik'),
+              ('húsz', 'huszadik'),
+              ('tíz', 'tizedik'),
+              ('kilenc', 'kilencedik'),
+              ('nyolc', 'nyolcadik'),
+              ('hét', 'hetedik'),
+              ('hat', 'hatodik'),
+              ('öt', 'ötödik'),
+              ('négy', 'negyedik'),
+              ('három', 'harmadik'),
+              ('kettő', 'kettedik'),
+              ('egy', 'egyedik'))
+
+def to_text_ord(n):
+    if n == 0:
+        return 'nulladik'
+    elif n == 1:
+        return 'első'
+    elif n == 2:
+        return 'második'
+    else:
+        text = to_text(n)
+        for search, replace in hu_ord_map:
+            if text[-len(search):] == search:
+                return text[:-len(search)] + replace
