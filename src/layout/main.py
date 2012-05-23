@@ -179,7 +179,7 @@ def get_layout(data, rules, dictionary, debug=False, pr=False):
         print('[DONE]'.rjust(7))
     return tuple(layout)
 
-def get_rules(propdata):
+def get_rules(data):
     '''Parses rules from a rules file'''
     def raw():
         '''This function does the first phase:
@@ -203,7 +203,7 @@ def get_rules(propdata):
             # declarations line
             p = re.compile(r'^(?!#)(?P<declaration>.+?)\s*:\s*\((?P<format>.*?)\)(?P<options>.*?)$', flags=re.M)
             # s returns None if no match which stops the loop
-            s = p.search(propdata[i:])
+            s = p.search(data[i:])
             if s:
                 # If match you want to define a subdictionary for that
                 # particular declaration
@@ -295,7 +295,7 @@ def get_rules(propdata):
                 i += s.end()    
     return prop
 
-def get_raw(inputdata, rules, dictionary, pr=True):
+def get_raw(data, rules, dictionary, pr=True):
     def trimnewline(content,newlinecount=2,replacestring='\\n'):
         r = True
         while r:
@@ -315,7 +315,7 @@ def get_raw(inputdata, rules, dictionary, pr=True):
         print('\rMaking raw file: Initial replaces'.ljust(61),end='')
     # You want to remove the zero width no-break space character at
     # the beginning of your inputdata.
-    _raw = re.sub('^\ufeff',r'',inputdata)
+    _raw = re.sub('^\ufeff',r'',data)
     # Now you want to make sure all current declaration is followed by an
     # empty line. This is necessary before you can continue.
     _raw = re.sub('}\n(?!\n)',r'}\n\n',_raw)

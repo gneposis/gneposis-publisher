@@ -1,5 +1,7 @@
-def get(layout, rules, startindex=0, endindex=None, oneonly=False, key=None, line=None, optionkey=None, optionvalue=None):
-    def get_option(key, rules, optionkey, optionvalue):
+from core.core import layout, rules
+
+def get(startindex=0, endindex=None, oneonly=False, key=None, line=None, optionkey=None, optionvalue=None):
+    def get_option(key):
         if optionkey and optionvalue:
             if optionvalue == rules[key]['options'].get(optionkey, False):
                 return True
@@ -16,15 +18,15 @@ def get(layout, rules, startindex=0, endindex=None, oneonly=False, key=None, lin
     
     for i in range(startindex,endindex):
         
-        if key == layout[i]['key'] and not line:
+        if not line and key == layout[i]['key']:
             add = True
-        elif line == layout[i]['line'] and not key:
+        elif not line and not key and optionkey and get_option(layout[i]['key']):
             add = True
-        elif key == layout[i]['key'] and line == layout[i]['line']:
+        elif line == layout[i]['line'] and not key and not optionkey:
             add = True
-        elif not key and optionkey and get_option(layout[i]['key'], rules, optionkey, optionvalue) and not line:
+        elif line == layout[i]['line'] and key == layout[i]['key']:
             add = True
-        elif not key and optionkey and get_option(layout[i]['key'], rules, optionkey, optionvalue) and line == layout[i]['line']:
+        elif line == layout[i]['line'] and not key and optionkey and get_option(layout[i]['key']):
             add = True
         else:
             add = False
@@ -35,7 +37,7 @@ def get(layout, rules, startindex=0, endindex=None, oneonly=False, key=None, lin
             result.append(i)
     return tuple(result)
 
-def hasoption(rules,key,optionkey,optionvalue=None):
+def hasoption(key,optionkey='level',optionvalue=None):
     if rules[key]['options'].get(optionkey,None):
         if optionvalue and rules[key]['options'][optionkey] == optionvalue:
             return True
@@ -45,12 +47,12 @@ def hasoption(rules,key,optionkey,optionvalue=None):
             return False
     else:
         return False
-    
-def optionvalues(layout, rules, optionkey='level', hierarchy=True, optionvalue=None):
+
+def optionvalues(optionkey='level', hierarchy=True, optionvalue=None):
     _list = []
     _set = set()
     for i in range(len(layout)):
-        if hasoption(rules,layout[i]['key'],optionkey,optionvalue=optionvalue) == True:
+        if hasoption(layout[i]['key'],optionkey,optionvalue=optionvalue) == True:
             value = rules[layout[i]['key']]['options'][optionkey]
             _list.append(value)
             _set.add(value)
@@ -63,9 +65,7 @@ def optionvalues(layout, rules, optionkey='level', hierarchy=True, optionvalue=N
                 _list[i] = _hierarchy.index(_list[i])
     return _list
 
-
-        
-def css_name(layout, rules, ind, argind):
+def css_name(ind, argind):
     css = ''
     if layout[ind].get('css',None):
         css = layout[ind]['css']
@@ -79,5 +79,3 @@ def css_name(layout, rules, ind, argind):
         if arg != css:
             css = css + arg
     return css
-
-cont = set()

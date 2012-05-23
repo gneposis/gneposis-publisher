@@ -14,22 +14,22 @@ isbn : (isbn) single meta
 
 # main structure declarations
 
-book : (title <:: subtitle>) level=1 class
-part : (title <:: subtitle>) level=2 class
-chapter : (title <:: subtitle>) level=3 class
-section : (title <:: subtitle>) level=4 class
+book : (title <:: subtitle>) level=1 class block
+part : (title <:: subtitle>) level=2 class block
+chapter : (title <:: subtitle>) level=3 class block
+section : (title <:: subtitle>) level=4 class block
 paragraph : (title) level=5 class
 stars : () class
 
 # remaining structure declarations
 
-copyright : () class=copyright row
-dedication: () class=dedication
-foreword : (title) class
-preface : (title) class
-intro : (title) class
+copyright : () class=copyright row block
+dedication: () class=dedication block
+foreword : (title) class block
+preface : (title) class block
+intro : (title) class block
 
-announcement : ()
+announcement : () block
 
 # notes and footnotes
 

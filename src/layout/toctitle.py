@@ -17,7 +17,7 @@ NUMBER_EVALS = { 'text'   : 'getattr(numtext,language).to_text_ord(n)',
 
 
 def _hierarchy():
-    values = optionvalues(layout, rules, optionkey='level', hierarchy=True, optionvalue=None)
+    values = optionvalues()
     level = 0
     loop = True
     result = []
@@ -31,13 +31,13 @@ def _hierarchy():
 
 hierarchy = _hierarchy()
 
-def location(layout, rules, ind, continous='chapter', hierarchy=True, optionkey='level', optionvalue=None):
-    def parent(layout, rules, ind, optionkey=optionkey, hierarchy=hierarchy, optionvalue=optionvalue):
-        v0 = optionvalues(layout, rules, optionkey=optionkey, hierarchy=hierarchy, optionvalue=optionvalue)[ind]
+def location(ind, continous=None):
+    def parent(ind):
+        v0 = optionvalues()[ind]
         i = -1
         s = True
         while s == True and ind+i >= 0:
-            v1 = optionvalues(layout, rules, optionkey=optionkey, hierarchy=hierarchy, optionvalue=optionvalue)[ind+i]
+            v1 = optionvalues()[ind+i]
             try:
                 if v1 < v0:
                     return (v0, v1, ind+i)
@@ -45,10 +45,10 @@ def location(layout, rules, ind, continous='chapter', hierarchy=True, optionkey=
                     i -= 1
             except:
                 i -= 1
-    def count(layout, rules, ind, continous=continous, hierarchy=hierarchy, optionkey=optionkey, optionvalue=optionvalue):
-        _parent = parent(layout, rules, ind, optionkey=optionkey, hierarchy=hierarchy, optionvalue=optionvalue)
+    def count(ind):
+        _parent = parent(ind)
         try:
-            if layout[ind]['key'] in continous:
+            if layout[ind]['key'] == continous:
                 success = True
             else:
                 success = False
@@ -60,7 +60,7 @@ def location(layout, rules, ind, continous='chapter', hierarchy=True, optionkey=
         elif _parent:
             i = -1
             while _parent[2]+i > 0:
-                v = optionvalues(layout, rules, optionkey=optionkey, hierarchy=hierarchy, optionvalue=optionvalue)[_parent[2]+i]
+                v = optionvalues()[_parent[2]+i]
                 if v == _parent[0]:
                     return layout[ind]['nr'] - layout[_parent[2]+i]['nr']
                 else:
@@ -76,8 +76,8 @@ def location(layout, rules, ind, continous='chapter', hierarchy=True, optionkey=
     _location = []
     loop = True
     while loop:
-        _parent = parent(layout, rules, ind, optionkey=optionkey, hierarchy=hierarchy, optionvalue=optionvalue)
-        _count = count(layout, rules, ind, continous=continous, hierarchy=hierarchy, optionkey=optionkey, optionvalue=optionvalue)
+        _parent = parent(ind)
+        _count = count(ind)
         
         _location.insert(0,_count)
         
@@ -94,11 +94,11 @@ def location(layout, rules, ind, continous='chapter', hierarchy=True, optionkey=
 
 def _numbers_in_titles():
     def check(n_type):
-        n = location(layout, rules, ind, continous=None, hierarchy=True, optionkey='level', optionvalue=None)[-1]
+        n = location(ind, continous=None)[-1]
         if re.search(r'\b'+eval(NUMBER_EVALS[n_type])+r'\b',content):
             return n_type
         else:
-            n = location(layout, rules, ind, continous=division, hierarchy=True, optionkey='level', optionvalue=None)[-1]
+            n = location(ind, continous=division)[-1]
             if re.search(r'\b'+eval(NUMBER_EVALS[n_type])+r'\b',content):
                 result['Continous'].add(division)
                 return n_type
@@ -108,7 +108,7 @@ def _numbers_in_titles():
     result['Continous'] = set()
     for division in hierarchy:
         result[division] = ''
-        ind_list = get(layout,rules,key=division)
+        ind_list = get(key=division)
         for ind in ind_list:
             content = layout[ind]['title'].lower()
             if result[division] == '':
@@ -133,11 +133,11 @@ def title(layoutindex):
             return ''
         elif hierarchy.index(_key) == hierarchy.index(cap):
             if layout[layoutindex].get('subtitle', None):
-                return str(location(layout, rules, layoutindex, continous=_key, hierarchy=True, optionkey='level', optionvalue=None)[-1]) + '. '
+                return str(location(layoutindex, continous=_key)[-1]) + '. '
             else:
                 return ''
         else:
-            return str(location(layout, rules, layoutindex, continous=None, hierarchy=True, optionkey='level', optionvalue=None)[-1]) + '. '
+            return str(location(layoutindex, continous=None)[-1]) + '. '
                 
     def get_title():
         if hierarchy.index(_key) < hierarchy.index(cap):
