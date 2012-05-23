@@ -34,6 +34,7 @@ else:
 
 decmainpath = path + '/data/declarations'
 decpath = path + '/data/languages/declarations/*'
+titpath = path + '/data/languages/titles/*'
 
 
 

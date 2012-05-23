@@ -1,13 +1,5 @@
 import re
 
-from .language import full_dictionary, language
-
-def dictionary(inputdata, decpath):
-    ''' Returns the declarations dictionary for inputdata'''
-    # You want this function to return the dictionary for the document language
-    # only.
-    return full_dictionary(decpath)[language(inputdata, decpath)]
-
 def parser(declaration, rules, dictionary):
     '''Parses a declaration string.
     

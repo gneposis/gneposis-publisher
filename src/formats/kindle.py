@@ -1,9 +1,11 @@
 import re
 
 from core.opts import path
+from core.core import dic_t
 from gntools.lines import content
 from gntools.reformat import to_utf
-from layout.parser import css_name, get, location
+from layout.parser import css_name, get
+from layout.toctitle import location, numbers_in_titles, title
 
 def body(data, layout, rules):
     '''Creates the body.html data based on a given data'''
@@ -40,46 +42,17 @@ def body(data, layout, rules):
             return page
         def tableofcontents(layout,rules,depth,tocnr,toctitleind):
             print('\rMaking tocpage...'.ljust(61),end='')
-            def toctitletext(layoutelement, location, tocnr, toctitleind):
-                _depth = len(location)
-                _location = list(location)
-                for i in range(_depth):
-                    try:
-                        if tocnr[i] == False or tocnr[i] == 0:
-                            _location[i] = None
-                    except:
-                        None
-                
-                while _location.count(None)>0:
-                    _location.remove(None)
-                
-                _location = '.'.join([str(x) for x in _location])
-                
-                if _location != '':
-                    _location = _location + '. '
-                
-                try:
-                    titlerule = toctitleind[_depth-1]
-                except:
-                    titlerule = 'title'
-                
-                if titlerule == str(titlerule):
-                    _title = layoutelement[titlerule]
-                else:
-                    _title = ''
-                    for i in range(len(titlerule)):
-                        try:
-                            _title = _title + layoutelement[titlerule[i]]
-                        except:
-                            _title = _title + titlerule[i]
-                    
-                return '{0}{1}'.format(_location,_title)
-            page = '<a name="toc"><div class="toc">{0}</div></a>\n'.format('Table of Contents')
+            page = '<a name="toc"><div class="toc">{0}</div></a>\n'.format(dic_t['toc'])
+            
+            if len(get(layout,rules,key='intro')) == 1:
+                _line = '<div class="toclvli"><a href="#intro">{0}</a></div>\n'.format(layout[get(layout,rules,key='intro')[0]]['title'])
+                page = page + _line
+            
             for i in get(layout,rules,optionkey='level'):
-                _location = location(layout,rules,i)
+                _location = location(layout,rules,i,continous=numbers_in_titles['Continous'])
                 if len(_location) <= depth:
                     _href = '-'.join([str(x) for x in _location])
-                    _line = '<div class="toclvl{0}"><a href="#{1}">{2}</a></div>\n'.format(len(_location),_href,to_utf(toctitletext(layout[i], _location, tocnr, toctitleind)))
+                    _line = '<div class="toclvl{0}"><a href="#{1}">{2}</a></div>\n'.format(len(_location),_href,to_utf(title(i)))
                     page = page + _line
             print('[DONE]'.rjust(7))
             return page
