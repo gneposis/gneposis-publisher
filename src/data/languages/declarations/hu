@@ -19,12 +19,12 @@ RÉSZ : part
 FEJEZET : chapter
 SZAKASZ : section
 PARAGRAFUS : paragraph
-*** : stars
 
 # remaining structure declarations
 
 COPYRIGHT : copyright
 AJÁNLÁS : dedication
+MOTTÓ : motto
 ELŐSZÓ : foreword
 ELŐSZÓ.SZERZŐ : preface
 BEVEZETÉS : intro
@@ -42,8 +42,10 @@ BALRA : left
 JOBBRA : right
 KÖZÉPRE : center
 
-/ : end
+KISKAPITÁLIS : smallcaps
+ALÁHÚZ : underline
 
 # declarations for special contents
 
+KERET : frame
 VERS : verse

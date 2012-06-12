@@ -32,9 +32,9 @@ else:
     filefile = filefull
     fileext = None
 
-decmainpath = path + '/data/declarations'
-decpath = path + '/data/languages/declarations/*'
-titpath = path + '/data/languages/titles/*'
+rules_path = path + '/data/declarations'
+dec_path = path + '/data/languages/declarations/*'
+tit_path = path + '/data/languages/titles/*'
 
 
 

@@ -18,7 +18,9 @@ def get(startindex=0, endindex=None, oneonly=False, key=None, line=None, optionk
     
     for i in range(startindex,endindex):
         
-        if not line and key == layout[i]['key']:
+        if not line and not key and not optionkey:
+            add = True
+        elif not line and key == layout[i]['key']:
             add = True
         elif not line and not key and optionkey and get_option(layout[i]['key']):
             add = True

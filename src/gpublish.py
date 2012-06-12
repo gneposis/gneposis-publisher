@@ -17,15 +17,10 @@ print('\ngneposis-publisher 0.1alpha by Adam Szieberth, 2012')
 print('='*67)
 
 import sys
-from core.opts import ensure_dir, filefile, filepath, mode
-from formats import kindle
-from core.core import raw, layout, rules, dic_d
 
-from layout.toctitle import numbers_in_titles
-
-if __name__ == "__main__":
-    if mode == 'kindle':
-        print('\nCreating kindle body file...'.upper())
-        print('- '*33+'-')
-        with open(ensure_dir(filepath+'/'+mode)+'/'+filefile+'.html', 'w', encoding='utf-8') as a_body:
-            a_body.write(kindle.body(raw, layout, rules))
+#if __name__ == "__main__":
+#    if mode == 'kindle':
+#        print('\nCreating kindle body file...'.upper())
+#        print('- '*33+'-')
+#        with open(ensure_dir(filepath+'/'+mode)+'/'+filefile+'.html', 'w', encoding='utf-8') as a_body:
+#            a_body.write(kindle.make_body_html())
