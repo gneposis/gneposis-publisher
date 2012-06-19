@@ -14,23 +14,23 @@ isbn : (isbn) single meta
 
 # main structure declarations
 
-book : (title <:: subtitle>) level=1 class
-part : (title <:: subtitle>) level=2 class
-chapter : (title <:: subtitle>) level=3 class
-section : (title <:: subtitle>) level=4 class
-paragraph : (title) level=5 class
-stars : () class
+book : (title <:: subtitle>) level=1 class endall
+part : (title <:: subtitle>) level=2 class endall
+chapter : (title <:: subtitle>) level=3 class endall
+section : (title <:: subtitle>) level=4 class endall
+paragraph : (title) level=5 class endall
+stars : () class endall
 
 # remaining structure declarations
 
-copyright : () class=copyright row
-dedication: () class=dedication
-motto : () class=motto
-foreword : (title) class
-preface : (title) class
-intro : (title) class
+copyright : () class=copyright row endall
+dedication: () class=dedication endall
+motto : () class=motto endable
+foreword : (title) class endall
+preface : (title) class endall
+intro : (title) class endall
 
-announcement : ()
+announcement : () endall
 
 # notes and footnotes
 
@@ -39,16 +39,17 @@ note : (note) inline
 
 # class declarations
 
-left: () class=left
-right : () class=right
-center : () class=center
+left: () class=left endable
+right : () class=right endable
+center : () class=center endable
 
 smallcaps : (content) class=smallcaps
 underline : (content) class=underline
 
-end: () class
+end: () class end
+endall: () class endall
 
 # declarations for special contents
 
-frame : (borderwidth)
-verse : (<title> <:: author>) class=verse row
+frame : (borderwidth) endable
+verse : (<title> <:: author>) class=verse row endable

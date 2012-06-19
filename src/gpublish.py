@@ -18,9 +18,9 @@ print('='*67)
 
 import sys
 
-#if __name__ == "__main__":
-#    if mode == 'kindle':
-#        print('\nCreating kindle body file...'.upper())
-#        print('- '*33+'-')
-#        with open(ensure_dir(filepath+'/'+mode)+'/'+filefile+'.html', 'w', encoding='utf-8') as a_body:
-#            a_body.write(kindle.make_body_html())
+import core.raw
+raw = core.raw.make()
+import gntools.lines
+lns = gntools.lines.newlines(raw)
+import core.layout
+stm = core.layout.get_statements(raw)
