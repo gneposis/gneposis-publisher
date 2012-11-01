@@ -1,5 +1,4 @@
-import re
-import unicodedata
+﻿import re
 
 def re_string(s):
     '''Converts a string to be able to used in re patterns.'''

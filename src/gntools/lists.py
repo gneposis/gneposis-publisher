@@ -29,3 +29,13 @@ def intersection_of_two_lists(reference, current):
         return None
 
     return isect
+
+# code by Graddy: http://stackoverflow.com/a/8337168
+def nth(n, _list, lookfor=True):
+    '''Finds the nth True in a given list.'''
+    c = 0
+    for index,i in enumerate(_list):
+        if i == lookfor:
+            c += 1
+            if c == n:
+                return index

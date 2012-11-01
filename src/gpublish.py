@@ -17,27 +17,21 @@ import sys
 import core.args
 import core.fileparser
 
-a = core.fileparser.lines(core.args.infile)
+b = core.fileparser.ll_blocks(core.args.infile)
 
-l = []
-i = 0
-loop = True
-while i <= len(a):
-    l.append(core.fileparser.get_block(i, a))
-    i = l[-1].lines[1] + l[-1].emptyafter + 1
+a = []
+x = b
+while x.next:
+    a.append(x)
+    x = x.next
 
-b = []
-for i in range(len(l)):
-    b.append(l[i].content(a))
+ss = a[37]
 
-#blocks = core.fileparser.Blocks(core.args.infile)
-#
-#x = []
-#for i in blocks:
-#    x.append(i)
+from gntools.texts.typesetting import *
 
-#raw = core.raw.make()
-#import gntools.lines
-#lns = gntools.lines.newlines(raw)
-#import core.layout
-#stm = core.layout.get_statements(raw)
+def r(s=ss, margin=72):
+    rr = reform_par(ss.cont(), 'en_GB', margin=margin, indent=8, justify='deep')
+    for i in rr.splitlines():
+        print(i)
+
+r(margin=40)

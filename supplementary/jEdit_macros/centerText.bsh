@@ -1,0 +1,31 @@
+/*
+ Macro for centering multiple lines of text
+
+ Author: Simao Mata <simao@bliter.com>
+ Version: 0.1 (14-06-2006)
+
+ This work is licensed under the Creative Commons Attribution-ShareAlike 2.5
+ License. To view a copy of this license, visit
+ http://creativecommons.org/licenses/by-sa/2.5/ or send a letter to Creative
+ Commons, 543 Howard Street, 5th Floor, San Francisco, California, 94105, USA.
+
+*/
+
+selectedLines = textArea.getSelectedLines();
+
+for(i = 0; i < selectedLines.length; ++i)
+{
+	//Calculates where is this line
+	textArea.setCaretPosition(textArea.getLineStartOffset(selectedLines[i]));
+	lineText = textArea.getLineText(selectedLines[i]).trim();
+	
+	//Calculates how many whitespace should we put before text
+	lineCenter = (buffer.getProperty("maxLineLen") - lineText.length()) / 2;
+	
+	//Selects current line, and aligns it
+	textArea.selectLine();
+	for(j = 0; j < lineCenter; j++)
+		textArea.setSelectedText(" ");
+	textArea.setSelectedText(lineText);
+}
+
