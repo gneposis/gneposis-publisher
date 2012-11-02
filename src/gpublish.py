@@ -29,9 +29,9 @@ ss = a[37]
 
 from gntools.texts.typesetting import *
 
-def r(s=ss, margin=72):
-    rr = reform_par(ss.cont(), 'en_GB', margin=margin, indent=8, justify='deep')
+def r(s=ss, margin=72, indent=8, justify='deep'):
+    rr = reform_par(ss.cont(), 'en_GB', margin=margin, indent=indent, justify=justify)
     for i in rr.splitlines():
         print(i)
 
-r(margin=40)
+r(margin=41)

@@ -4,11 +4,12 @@ from hyphen import Hyphenator, dict_info
 from gntools.lists import nth
 
 class OutOfMarginError(ValueError): pass
+class UnavailableHyphDictionaryError(ValueError): pass
 
 PRIOR_BREAK_CHARS = {'.', ',', ':', ';'}
 JUSTIFY_METHODS = {'deep', 'rand', 'left'}
 
-def reform_par(partext, lang, margin=72, hyph=True, indent=0, justify=None):
+def reform_par(text, lang, indent=0, justify=None, margin=72):
     '''Reformats a paragraph, using hyphenation if hyph is True.
     Justifies it if justify = "deep", "rand" or "left".
     Justify methods:
@@ -17,116 +18,136 @@ def reform_par(partext, lang, margin=72, hyph=True, indent=0, justify=None):
         "left" is adding spaces from left side
     '''
 
-    def len_hyph_remained():
-        if not hyph_remained:
-            return 0
-        return len(hyph_remained) + 1
-
-    def get_priority_breaks(l_line):
-        '''Determines the priority break points for deep justify method'''
-        break_count = len(l_line) - 1
-        prior_breaks = [False for x in range(break_count)]
-        for i in range(break_count):
-            if l_line[i][-1] in PRIOR_BREAK_CHARS:
-                prior_breaks[i] = True
-        return prior_breaks
-
-    def rand_break(l_break, lookfor=True):
-        '''Chooses a break randomly for justifiing'''
-        # - first by getting the count of not used yet
-        count = sum(1 for x in l_break if x == lookfor)
-        # now choose one randomly
-        c_i = random.randint(1, count)
-        # now we want the index of (c_i)th False in braks_used
-        return nth(c_i, l_break, lookfor=lookfor)
-
-    i = 0
-    j = 0
-    result = []
-    hyph_remained = ''
-    in_first_line = True
-
-    while j != -1: # j will be the index of the rfinder: -1 means no whitespace was found
-        if len(partext) - i <= margin:
-            result.append(hyph_remained + partext[i:])
-            j = -1          
-        else:
-            if in_first_line and indent:
-                j = partext[ i : i + margin - len_hyph_remained() - indent].rfind(' ') # last space before margin
-                t = ' '*indent + hyph_remained + partext[i:i+j]
+    def cut_string(string, lang=lang, margin=margin):
+        '''Cut a string at a breakpoint (whitespace) before margin.
+        Hyphenates if lang is in the available dictionaries.
+        Returns a list of three elements:
+            [0]: The result line of text
+            [1]: The index of starting point of the next line in string
+            [2]: The remained part of hyphenated word plus a whitespace or '' if none
+        '''
+        break_before_margin = string[:margin].rfind(' ')
+        
+        if lang in dict_info.keys():
+            break_after_margin = string[margin:].find(' ')
+            
+            if not break_after_margin:
+                word_at_break = None
+                word_hyphenated = None
             else:
-                j = partext[ i : i + margin - len_hyph_remained()].rfind(' ') # last space before margin
-                t = hyph_remained + partext[i:i+j]
+                word_at_break = string[break_before_margin + 1 : margin + break_after_margin]
+                word_hyphenated = Hyphenator(lang).wrap(word_at_break, margin - break_before_margin - 1)
             
-            if hyph:
-                # now we should check if a hyhenated word fits there
-                loc = i + j + 1
-                k = partext[loc:].find(' ')
-                next_word = partext[loc : loc+k]
-                free_space = margin - j - len_hyph_remained() - 1
-                hyph_word = Hyphenator(lang).wrap(next_word, free_space)
-                if hyph_word:
-                    t += ' ' + hyph_word[0]
-                    hyph_remained = hyph_word[1]
-                    i += k
-                else:
-                    hyph_remained = ''
-            
-            if justify in JUSTIFY_METHODS:
-                
-                if len(t) == margin: # If we are lucky, why bother calculating?
-                    pass
-                elif len(t) > margin:
-                    raise OutOfMarginError('Line is longer than margin, use reform_par first.')
-                
-                n = margin - len(t) # Amount of whitespaces we need
-                l_line = t.split()
-                break_count = len(l_line) - 1 # Amount of whitespaces we already have
-                spaces_breaks = [int((n + break_count) / break_count) for x in range(break_count)]
-                m = sum(spaces_breaks) - break_count # New amount of whitespaces we need
-                
-                s_i = -1
-                breaks_used = [False for x in range(break_count)]
-                
-                if justify == 'deep': # initiate necessary variables for deep method
-                    prior_breaks = get_priority_breaks(l_line)
-                    free_prior_breaks = None
-                
-                while 0 < n - m:
-                    if justify == 'deep':
-                        if prior_breaks > breaks_used: # If we arent used all our prior breaks yet
-                            free_prior_breaks = prior_breaks
-                            # Now we determine the free prior breaks
-                            for b_i in range(len(prior_breaks)):
-                                if prior_breaks[b_i] and breaks_used[b_i]:
-                                    free_prior_breaks[b_i] = False
-                            s_i = rand_break(free_prior_breaks)
-                            breaks_used[s_i] = True 
-                        else:
-                            s_i = rand_break(breaks_used, lookfor=False)
-                            breaks_used[s_i] = True
-                
-                    elif justify == 'rand':
-                        s_i = rand_break(breaks_used, lookfor=False)
-                        breaks_used[s_i] = True
-                    elif justify == 'left':   
-                        s_i += 1
-                    else:
-                        raise IllegalMethod('Illegal method call {0}'.format(justify))
-                
-                    spaces_breaks[s_i] += 1
-                    m += 1
-                
-                if in_first_line and indent:
-                    t = ' '*indent + l_line[0] # Add first word
-                else:
-                    t = l_line[0]
-                
-                for b_i in range(break_count):
-                    t += ' '*spaces_breaks[b_i] + l_line[b_i+1] # Now add necessary amount whitespaces + words one-by-one
+            if word_hyphenated:
+                return string[:break_before_margin + 1] + word_hyphenated[0], margin + break_after_margin + 1, word_hyphenated[1] + ' '
+            elif word_at_break:
+                return string[:break_before_margin], break_before_margin + 1, ''
+            else:
+                return string[:margin], margin + 1, ''
+        elif lang:
+            raise UnavailableHyphDictionaryError('Hyphenation dictionary for language {0} is not available. Please install it first.'.format(lang))
 
-            result.append(t)
+        return string[:break_before_margin], break_before_margin + 1, ''
+
+    def justify_line(line_of_text, margin=margin, method=justify):
+        '''Justifies a line of text.
+        Methods:
+        "deep" is the most precise but slow
+        "rand" is pure random
+        "left" is adding spaces from left side
+        '''
+
+        def get_priority_breaks(l_line):
+            '''Determines the priority break points for deep justify method.'''
+            break_count = len(l_line) - 1
+            prior_breaks = [False for x in range(break_count)]
+            for i in range(break_count):
+                if l_line[i][-1] in PRIOR_BREAK_CHARS:
+                    prior_breaks[i] = True
+            return prior_breaks
+
+        def rand_break(l_break, lookfor=True):
+            '''Chooses a break randomly for justifiing'''
+            # - first by getting the count of not used yet
+            count = sum(1 for x in l_break if x == lookfor)
+            # now choose one randomly
+            c_i = random.randint(1, count)
+            # now we want the index of (c_i)th False in braks_used
+            return nth(c_i, l_break, lookfor=lookfor)
+
+        if len(line_of_text) == margin: # If we are lucky, why bother calculating?
+            return line_of_text
+        elif len(line_of_text) > margin:
+            raise OutOfMarginError('Line is longer than margin, use reform_par first.')
+
+        n = margin - len(line_of_text) # Amount of whitespaces we need
+        l_line = line_of_text.split()
+        break_count = len(l_line) - 1 # Amount of whitespaces we already have
+        spaces_breaks = [int((n + break_count) / break_count) for x in range(break_count)]
+        m = sum(spaces_breaks) - break_count # New amount of whitespaces we need
+
+        s_i = -1
+        breaks_used = [False for x in range(break_count)]
+
+        if method == 'deep': # initiate necessary variables for deep method
+            prior_breaks = get_priority_breaks(l_line)
+            free_prior_breaks = None
+
+        while 0 < n - m:
+            if method == 'deep':
+                if prior_breaks > breaks_used: # If we arent used all our prior breaks yet
+                    free_prior_breaks = prior_breaks
+                    # Now we determine the free prior breaks
+                    for b_i in range(len(prior_breaks)):
+                        if prior_breaks[b_i] and breaks_used[b_i]:
+                            free_prior_breaks[b_i] = False
+                    s_i = rand_break(free_prior_breaks)
+                    breaks_used[s_i] = True
+                else:
+                    s_i = rand_break(breaks_used, lookfor=False)
+                    breaks_used[s_i] = True
+            elif method == 'rand':
+                s_i = rand_break(breaks_used, lookfor=False)
+                breaks_used[s_i] = True
+            elif method == 'left':
+                s_i += 1
+            else:
+                raise IllegalMethod('Illegal method call {0}'.format(justify))
+
+            spaces_breaks[s_i] += 1
+            m += 1
+
+            line_of_text = l_line[0]
+
+        for b_i in range(break_count):
+            line_of_text += ' '*spaces_breaks[b_i] + l_line[b_i+1] # Now add necessary amount whitespaces + words one-by-one
+
+        return line_of_text
+    
+    result = []
+
+    in_first_line = True
+    in_last_line = False    
+
+    while not in_last_line:
+
+        if len(text) <= margin:
+            in_last_line = True
+            result.append(text)
+            return '\n'.join(result)
+        
+        x = cut_string(text, margin = margin - in_first_line * indent)
+        text = x[2] + text[x[1]:]
+
+        line_of_text = x[0]
+
+        if justify and not in_last_line:
+            line_of_text = justify_line(line_of_text, margin = margin - in_first_line * indent)
+
+        if in_first_line:
+            line_of_text = ' '*indent + line_of_text
             in_first_line = False
-            i += j + 1
+
+        result.append(line_of_text)
 
     return '\n'.join(result)
