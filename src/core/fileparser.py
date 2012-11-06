@@ -19,6 +19,8 @@ PARAGRAPH_BODYINDENT = 0
 HYPH = False
 lang = 'en_GB'
 
+#temporary for wrapmargin
+WRAPMARGIN_BARRIER = 0.05
 
 class InvalidLineNumberError(ValueError): pass
 class NoMarginError(ValueError): pass
@@ -83,7 +85,7 @@ class Line():
             
 class Block():
     # loc: tuple of start and end line number (st, en)
-    # loc = (-1,-1) is for the first block containing the empty lines at
+    # loc = (-1,0) is for the first block containing the empty lines at
     #     the beginning of the document in its self.emptyafter 
     def __init__(self, loc, l_lines, indent, emptyafter=0, indented=None):
         self.loc = loc
@@ -147,7 +149,7 @@ def ll_blocks(text):
             while l[start_line + i].empty:
                 count_empty += 1
                 i += 1
-            return Block((-1,-1), None, None, emptyafter=count_empty)
+            return Block((-1,0), None, None, emptyafter=count_empty)
         
         while start_line -1 + i < len(l):
             pos = start_line -1 + i
@@ -238,7 +240,27 @@ def ll_blocks(text):
     return first_block
 
 def wrapmargin(text):
-    return max([len(l) for l in text.splitlines()])
+    '''Detects the wrap margin of a given text.
+    This function will try to detect the wrapmargin even if longer lines
+    are present.
+    '''
+    distribution = {}
+    wrapmargin = None
+
+    l_text = text.splitlines()
+
+    for l in l_text:
+        try:
+            distribution[len(l)] += 1
+        except:
+            distribution[len(l)] = 1
+
+    for i in distribution:
+        if distribution[i] > len(l_text) * WRAPMARGIN_BARRIER:
+            wrapmargin = i
+
+    return wrapmargin
+#    return max([len(l) for l in text.splitlines()])
 
 
 
