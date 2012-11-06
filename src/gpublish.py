@@ -34,4 +34,4 @@ def r(s=ss, margin=72, indent=8, justify='deep'):
     for i in rr.splitlines():
         print(i)
 
-r(margin=41)
+r(margin=31)
