@@ -17,21 +17,31 @@ import sys
 import core.args
 import core.fileparser
 
-b = core.fileparser.ll_blocks(core.args.infile)
-
-a = []
-x = b
-while x.next:
-    a.append(x)
-    x = x.next
-
-ss = a[37]
-
 from gntools.texts.typesetting import *
 
-def r(s=ss, margin=72, indent=8, justify='deep'):
-    rr = reform_par(ss.cont(), 'en_GB', margin=margin, indent=indent, justify=justify)
-    for i in rr.splitlines():
-        print(i)
+I = 2
+M = 72
+JUSTIFY = 'deep'
+LANG = 'en_GB'
 
-r(margin=31)
+def reformat(block):
+
+    if len(block.l_lines())==1 and M in block.centered_at():
+        return block.raw_content()
+    
+    return reform_par(block.raw_content(), LANG, margin=M, indent=I, justify=JUSTIFY)
+    
+
+first_block = core.fileparser.ll_blocks(core.args.infile)
+
+b = first_block
+newfile = ''
+                  
+while b.next:
+    print(b.loc)
+#    newfile += reformat(b) + '\n'*(b.emptyafter + 1)
+    newfile += reformat(b) + '\n'
+    b = b.next
+
+with open('test.txt',mode='w', encoding='utf-8') as test_file:
+    test_file.write(newfile)                                     

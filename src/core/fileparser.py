@@ -1,6 +1,9 @@
 import re
 from math import ceil
 
+from core.args import infile
+from gntools.lists import ensure_index
+
 #dependency: PyHyphen
 from hyphen import Hyphenator, dict_info
 
@@ -19,210 +22,113 @@ PARAGRAPH_BODYINDENT = 0
 HYPH = False
 lang = 'en_GB'
 
-#temporary for wrapmargin
-WRAPMARGIN_BARRIER = 0.05
+class EmptyLineForBlockError(ValueError): pass
 
-class InvalidLineNumberError(ValueError): pass
-class NoMarginError(ValueError): pass
 
-class Line():
-    def __init__(self, s, margin=None):
-
-        self.fullcont = s
-        self.margin = margin
-        self.cont = self.fullcont.strip()
-        self.length = len(self.cont)
-        
-        if not worthypart_utf(self.cont):
-            self.empty = True
-        else:
-            self.empty = False
-
-    # generates tuple of (leftindent, shiftfromcenter, -rightindent)
-    def indent(self):
-            if not self.margin:
-                raise NoMarginError('No margin value!')
-            elif self.empty:
-                return None
-            else:
-                temp_fullcontent = worthypart_utf(self.fullcont)
-                leftindent = len(temp_fullcontent) - len(self.fullcont.lstrip())
-                rightindent = len(temp_fullcontent.rstrip()) - self.margin
-                centerindent = ceil((leftindent + rightindent)/2)
-                return [leftindent, centerindent, rightindent]
-    
-    def rawcont(self):
-        '''Generates the raw content of self.cont'''
-        return self.cont
-
-    def space(self, rightside=True):
-        '''Determines the empty space in the line.
-        If rightside=True then space before the content doesn't count.'''
-        if rightside:
-            return self.margin - self.length
-        return self.margin - len(self.fullcont)
-
-    def firstwrap(self, hyph=HYPH):
-        '''Determines the length of first wrap.
-        We use this to determine if line was wrapped at the last
-        possible place or not
-        '''
-        
-        try:
-            firstword = self.cont.split()[0]
-        except:
-            return 0
-
-        if not hyph:
-            return len(firstword)
-        
-        h = Hyphenator(lang)
-        i = 1
-        while not h.wrap(firstword, i) and i < len(firstword):
-            i += 1
-        return i
-
-            
 class Block():
     # loc: tuple of start and end line number (st, en)
     # loc = (-1,0) is for the first block containing the empty lines at
     #     the beginning of the document in its self.emptyafter 
-    def __init__(self, loc, l_lines, indent, emptyafter=0, indented=None):
+    def __init__(self, loc, emptyafter):
         self.loc = loc
-        self.l_lines = l_lines
         self.emptyafter = emptyafter
-        self.indented = indented
-        self.indent = indent
 
-    def cont(self):
-        c = []
-        for i in self.l_lines:
-            c.append(i.cont)
-        return ' '.join(c)
+    def l_lines(self):
+        '''Returnes the list of lines taken from <infile>''' 
+        return infile.splitlines()[self.loc[0]:self.loc[1]]
 
-    # style set for blocks
-    def style(self):
-        s = set()
+    def raw_content(self):
+        '''Returnes the list of lines taken from <infile>''' 
+        return ' '.join(self.l_lines())
 
-        # centered
-        if self.indent and self.indent[1] == 0:
-            s.add('centered')
+    def leftmargin(self):
+        '''Returns the column number of the left margin'''
+        l = self.l_lines()
+        m = 0
+        for i in l:
+            m = min(m,len(i) - len(i.lstrip()))
+        return m
 
-        return s
+    def rightmargin(self):
+        '''Returns the column number of the left margin'''
+        l = self.l_lines()
+        m = 0
+        for i in l:
+            m = max(m,len(i))
+        return m
 
+    def centered_at(self):
+        '''Returns the rightmargin value where 
+        the Block would be centered.'''
+        # example "...b" returns {7}
+        #         "...bl" returns {7,8}
+        l = self.l_lines()
+        c_i = set()
+        for i in l:
+            c_ii = set() 
+            m = len(i) - len(i.lstrip())
+            l_l = len(i.strip())
+            
+            if l_l % 2 == 0:
+                # if content length is even value
+                c_ii.add(l_l + 2*m -1)
+            else:
+                c_ii.add(l_l + 2*m +1)
+            c_ii.add(l_l + 2*m)
 
-    def reformat(self):
-        pass
+            if not c_i:
+                c_i = c_ii
+            else:
+                c_i = c_i & c_ii
 
-def l_lines(text):
-    wm = wrapmargin(text)
-    t = text.splitlines()
-
-    l = []    
-    for i in t:
-        l.append(Line(i, wm))
+        return c_i
     
-    return l
 
 def ll_blocks(text):
-    '''Generates a linked list of blocks and returns the last one'''
-    
-    def get_block(start_line, l): # l is the output of l_lines(text)
+    '''Generates a linked list of blocks and returns the last one.
+    A block is separated by a newline from another.'''
+        
+    def get_block(i):
+        '''Returns the Block starting from line index <i>.'''
 
-        def compare_values(first, second):
-            if first == second:
-                return first
-            return None
+        def count_empty(i):
+            '''Counts empty lines form a location.
+            If location is not empty, return 0.'''
+            c = 0
+            # here this function uses its parent variable <l>
+            while not l[i+c]:
+                c += 1
+            return c
         
-        def get_lines_list():
-            pass
+        if i == 0:
+            c_e = count_empty(i)
+            if c_e:
+                return Block((-1,0), c_e)
+                i = c_e
+            return Block((-1,0), 0)
         
-        i = 0
-        count_empty = 0
-        block_indent = None
-        indented = None
-        last_space = 0 # empty space in the last line
-        
-        if start_line > len(l):
-            raise InvalidLineNumberError('Too high line number: {0} not in document. Valid line numbers: 0 ... {1}'.format(start_line, len(lines)))
-        elif start_line == 0:
-            while l[start_line + i].empty:
-                count_empty += 1
-                i += 1
-            return Block((-1,0), None, None, emptyafter=count_empty)
-        
-        while start_line -1 + i < len(l):
-            pos = start_line -1 + i
-            current_indent = l[pos].indent()
-            #print(pos, current_indent)
-        
-            # if start_line is empty go to next line
-            if l[pos].empty and not block_indent:
-                last_space = 0
-                start_line += 1
-        
-            # now we are at the beginning of a block 
-            elif not l[pos].empty and not block_indent:
-                block_indent = current_indent
-                last_space = l[pos].space()
-                i += 1
-            
-            # now we are inside the block and not at the beginning of the next
-            elif (not l[pos].empty 
-                    and block_indent
-                    and count_empty == 0 
-                    and intersection_of_two_lists(block_indent, current_indent)
-                    and last_space <= l[pos].firstwrap()
-                 ):
-                block_indent =  intersection_of_two_lists(block_indent, current_indent)
-                last_space = l[pos].space()
-                i += 1
-        
-            # we encountered an indented paragraph
-            elif (not l[pos].empty 
-                    and block_indent
-                    and count_empty == 0 
-                    and (PARAGRAPH_BODYINDENT == current_indent[0] < block_indent[0] <= PARAGRAPH_MAXINDENT)
-                    and last_space <= l[pos].firstwrap()
-                 ):
-                indented = block_indent[0] - current_indent[0]
-                block_indent[0] = current_indent[0]
-                block_indent[1] = compare_values(block_indent[1], current_indent[1])
-                block_indent[2] = compare_values(block_indent[2], current_indent[2])
-                last_space = l[pos].space()
-                i += 1
-        
-            # we are at the beginning of the next block which immediately followed this one
-            elif (not l[pos].empty
-                    and block_indent
-                    and count_empty == 0
-                    and ( not intersection_of_two_lists(block_indent, current_indent)
-                            or last_space > l[pos].firstwrap() )
-                 ):
-                return Block((start_line, start_line + i - 1), l[start_line -1 : start_line + i - 1], block_indent, emptyafter=0, indented=indented)
-        
-            # empty lines after block
-            elif l[pos].empty and block_indent:
-                count_empty += 1
-                last_space = 0
-                i += 1
-        
-            # now we are at the beginning of the next block
-            else:
-                return Block((start_line, start_line + i - count_empty - 1), l[start_line - 1 : start_line + i - count_empty - 1], block_indent, emptyafter=count_empty, indented=indented)
-        
-        # now after while loop exit we reached the end of document
-        return Block((start_line, start_line + i - count_empty - 1), l[start_line - 1 : start_line + i - count_empty - 1], block_indent, emptyafter=count_empty, indented=indented)
+        # here this function uses its parent variable <l>
+        if not l[i]:
+            raise EmptyLineForBlockError('Start line of a Block must be nonempty: l{0}.'.format(i+1))
 
+        j = i
+        # first we deal with nonempty lines
+        while l[j] and j + 1 < len(l):
+            j += 1
+        # now the empty lines following the block
+        c_e = count_empty(j)
 
-    l = l_lines(text)
+        return Block((i,j), c_e)
+
+         
+    l = infile.splitlines()
 
     first_block = None
     last_block = None
-    
+
     i = 0
-    while i <= len(l):
-        block = get_block(i, l)
+    while i < len(l) - 1:
+        block = get_block(i)
         
         if not first_block:
             first_block = block
@@ -235,32 +141,24 @@ def ll_blocks(text):
             block.next = None
             last_block = block
 
-        i = block.loc[1] + block.emptyafter + 1
+        i = block.loc[1] + block.emptyafter
     
     return first_block
 
 def wrapmargin(text):
-    '''Detects the wrap margin of a given text.
-    This function will try to detect the wrapmargin even if longer lines
-    are present.
-    '''
-    distribution = {}
-    wrapmargin = None
+    '''Detects the wrap margin of a given text.'''
+# This is damn slow yet.
+#   return max([len(l) for l in text.splitlines()])
+    a = []
+    b = ll_blocks(text)
+    x = b.next
+    while x.next:
+        m = x.rightmargin()
+        ensure_index(m, a, val=0)
+        a[m] += 1
+        x = x.next
 
-    l_text = text.splitlines()
-
-    for l in l_text:
-        try:
-            distribution[len(l)] += 1
-        except:
-            distribution[len(l)] = 1
-
-    for i in distribution:
-        if distribution[i] > len(l_text) * WRAPMARGIN_BARRIER:
-            wrapmargin = i
-
-    return wrapmargin
-#    return max([len(l) for l in text.splitlines()])
+    return a.index(max(a))
 
 
 
