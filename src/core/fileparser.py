@@ -1,7 +1,6 @@
 import re
 from math import ceil
 
-from core.args import infile
 from gntools.lists import ensure_index
 
 #dependency: PyHyphen
@@ -17,10 +16,12 @@ import random
 # TODO: Later we want to implement paragraph blocks and get rid or these
 PARAGRAPH_MAXINDENT = 8
 PARAGRAPH_BODYINDENT = 0
+HUGE_VALUE = 10000
 
 # temporary constant for Hyphenation allowed
 HYPH = False
 lang = 'en_GB'
+HEADERS = ['chapter']
 
 class EmptyLineForBlockError(ValueError): pass
 
@@ -29,31 +30,24 @@ class Block():
     # loc: tuple of start and end line number (st, en)
     # loc = (-1,0) is for the first block containing the empty lines at
     #     the beginning of the document in its self.emptyafter 
-    def __init__(self, loc, emptyafter):
+    def __init__(self, loc, emptyafter, l_lines=None):
         self.loc = loc
         self.emptyafter = emptyafter
+        self.l_lines = l_lines
 
-    def l_lines(self):
-        '''Returnes the list of lines taken from <infile>''' 
-        return infile.splitlines()[self.loc[0]:self.loc[1]]
-
-    def raw_content(self):
-        '''Returnes the list of lines taken from <infile>''' 
-        return ' '.join(self.l_lines())
+        self.raw_content = ' '.join(self.l_lines)
 
     def leftmargin(self):
         '''Returns the column number of the left margin'''
-        l = self.l_lines()
-        m = 0
-        for i in l:
+        m = HUGE_VALUE
+        for i in self.l_lines:
             m = min(m,len(i) - len(i.lstrip()))
         return m
 
     def rightmargin(self):
         '''Returns the column number of the left margin'''
-        l = self.l_lines()
         m = 0
-        for i in l:
+        for i in self.l_lines:
             m = max(m,len(i))
         return m
 
@@ -62,9 +56,8 @@ class Block():
         the Block would be centered.'''
         # example "...b" returns {7}
         #         "...bl" returns {7,8}
-        l = self.l_lines()
         c_i = set()
-        for i in l:
+        for i in self.l_lines:
             c_ii = set() 
             m = len(i) - len(i.lstrip())
             l_l = len(i.strip())
@@ -82,6 +75,19 @@ class Block():
                 c_i = c_i & c_ii
 
         return c_i
+
+    def type(self, margin=None):
+        '''Returns the type of the block'''
+        if len(self.l_lines) == 1:
+
+            for i in HEADERS:
+                if self.raw_content.lower().find(i) > -1:
+                    return i
+
+        return 'paragraph'
+ 
+    def typetest(self, margin=None):
+        print(len(self.l_lines), margin, self.centered_at())
     
 
 def ll_blocks(text):
@@ -103,9 +109,9 @@ def ll_blocks(text):
         if i == 0:
             c_e = count_empty(i)
             if c_e:
-                return Block((-1,0), c_e)
+                return Block((-1,0), c_e, l_lines=[''])
                 i = c_e
-            return Block((-1,0), 0)
+            return Block((-1,0), 0, l_lines=[''])
         
         # here this function uses its parent variable <l>
         if not l[i]:
@@ -113,15 +119,19 @@ def ll_blocks(text):
 
         j = i
         # first we deal with nonempty lines
-        while l[j] and j + 1 < len(l):
+        while l[j] and j < len(l) - 1:
             j += 1
+
         # now the empty lines following the block
         c_e = count_empty(j)
 
-        return Block((i,j), c_e)
+        if j == len(l) - 1:
+            j += 1
+
+        return Block((i+1,j), c_e, l_lines=l[i:j])
 
          
-    l = infile.splitlines()
+    l = text.splitlines()
 
     first_block = None
     last_block = None
@@ -145,13 +155,12 @@ def ll_blocks(text):
     
     return first_block
 
-def wrapmargin(text):
+def wrapmargin(first_block):
     '''Detects the wrap margin of a given text.'''
 # This is damn slow yet.
 #   return max([len(l) for l in text.splitlines()])
     a = []
-    b = ll_blocks(text)
-    x = b.next
+    x = first_block.next
     while x.next:
         m = x.rightmargin()
         ensure_index(m, a, val=0)

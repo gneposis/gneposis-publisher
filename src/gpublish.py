@@ -16,32 +16,7 @@ import sys
 
 import core.args
 import core.fileparser
+from core.args import args
 
-from gntools.texts.typesetting import *
-
-I = 2
-M = 72
-JUSTIFY = 'deep'
-LANG = 'en_GB'
-
-def reformat(block):
-
-    if len(block.l_lines())==1 and M in block.centered_at():
-        return block.raw_content()
-    
-    return reform_par(block.raw_content(), LANG, margin=M, indent=I, justify=JUSTIFY)
-    
-
-first_block = core.fileparser.ll_blocks(core.args.infile)
-
-b = first_block
-newfile = ''
-                  
-while b.next:
-    print(b.loc)
-#    newfile += reformat(b) + '\n'*(b.emptyafter + 1)
-    newfile += reformat(b) + '\n'
-    b = b.next
-
-with open('test.txt',mode='w', encoding='utf-8') as test_file:
-    test_file.write(newfile)                                     
+if args.mode == 'plain':
+    import formats.plain
