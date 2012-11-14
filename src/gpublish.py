@@ -14,9 +14,14 @@ http://sam.zoy.org/wtfpl/COPYING for more details.
 '''
 import sys
 
-import core.args
+from gntools.lines import content
+
 import core.fileparser
-from core.args import args
+from core.args import args, infile
+
+first_block = core.fileparser.ll_blocks(content(infile, args.stline, args.enline))
 
 if args.mode == 'plain':
-    import formats.plain
+    from formats.plain import main
+
+main(first_block)

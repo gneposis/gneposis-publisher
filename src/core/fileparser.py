@@ -1,11 +1,14 @@
 import re
 from math import ceil
 
+from core.args import args
+
 from gntools.lists import ensure_index
 
 #dependency: PyHyphen
 from hyphen import Hyphenator, dict_info
 
+from gntools.debug import log
 from gntools.texts.utf import worthypart_utf
 from gntools.lists import intersection_of_two_lists
 
@@ -85,33 +88,22 @@ class Block():
                     return i
 
         return 'paragraph'
- 
-    def typetest(self, margin=None):
-        print(len(self.l_lines), margin, self.centered_at())
-    
 
 def ll_blocks(text):
     '''Generates a linked list of blocks and returns the last one.
     A block is separated by a newline from another.'''
+
+    def count_empty(i):
+        '''Counts empty lines form a location.
+        If location is not empty, return 0.'''
+        c = 0
+        # here this function uses its parent variable <l>
+        while not l[i+c]:
+            c += 1
+        return c
         
     def get_block(i):
         '''Returns the Block starting from line index <i>.'''
-
-        def count_empty(i):
-            '''Counts empty lines form a location.
-            If location is not empty, return 0.'''
-            c = 0
-            # here this function uses its parent variable <l>
-            while not l[i+c]:
-                c += 1
-            return c
-        
-        if i == 0:
-            c_e = count_empty(i)
-            if c_e:
-                return Block((-1,0), c_e, l_lines=[''])
-                i = c_e
-            return Block((-1,0), 0, l_lines=[''])
         
         # here this function uses its parent variable <l>
         if not l[i]:
@@ -128,44 +120,52 @@ def ll_blocks(text):
         if j == len(l) - 1:
             j += 1
 
-        return Block((i+1,j), c_e, l_lines=l[i:j])
+        #log(' '.join(l[i:j])+'\n', False)
+        return Block((i,j), c_e, l_lines=l[i:j])
 
          
     l = text.splitlines()
-
-    first_block = None
-    last_block = None
-
     i = 0
-    while i < len(l) - 1:
-        block = get_block(i)
-        
-        if not first_block:
-            first_block = block
-            block.prev = None
-            block.next = None
-            last_block = block
-        else:
-            last_block.next = block
-            block.prev = last_block
-            block.next = None
-            last_block = block
 
-        i = block.loc[1] + block.emptyafter
+    c_e = count_empty(i)
     
+    # first block is always only to store empty lines at the beginning of text
+    first_block = Block((-1,0), c_e, l_lines=[''])
+    first_block.prev = None
+    first_block.next = None
+    last_block = first_block
+    i += c_e
+
+    while i < len(l) - 1:
+    
+        log(str(args.stline + i)+' ')
+
+        block = get_block(i)
+
+        last_block.next = block
+        block.prev = last_block
+        block.next = None
+        last_block = block
+    
+        i = block.loc[1] + block.emptyafter
+           
     return first_block
 
 def wrapmargin(first_block):
     '''Detects the wrap margin of a given text.'''
-# This is damn slow yet.
-#   return max([len(l) for l in text.splitlines()])
-    a = []
-    x = first_block.next
-    while x.next:
+
+    def add_margin():
         m = x.rightmargin()
         ensure_index(m, a, val=0)
         a[m] += 1
+        
+    a = []
+    x = first_block.next
+
+    while x.next:
+        add_margin()
         x = x.next
+    add_margin()
 
     return a.index(max(a))
 

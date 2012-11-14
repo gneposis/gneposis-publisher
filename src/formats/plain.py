@@ -1,12 +1,36 @@
-import sys
 import core.fileparser
-from core.args import args,infile
-
-from gntools.texts.typesetting import *
-from gntools.filepath import backup, writeout
-from gntools.lines import content
+from core.args import args
 
 def reformat(block, margin=None):
+    from gntools.texts.typesetting import centerize, reform_par
+
+    def block_is_centered(block, _try = False):
+        if block:
+            if _try:
+                try:
+                    if margin in block.centered_at() and block.leftmargin():
+                        return True
+                except:
+                        return False
+            if margin in block.centered_at() and block.leftmargin():
+                return True
+        return False
+
+    def block_is_header(block, _try = False):
+        if block:
+            headers = core.fileparser.HEADERS
+            if _try:
+                try:
+                    if block.type() in headers:
+                        return True
+                except:
+                        return False
+            if block.type() in headers:
+                return True
+        return False
+
+    # check arguments
+
     if args.nohyph:
         hyph_lang = None
     else:
@@ -17,58 +41,38 @@ def reformat(block, margin=None):
     else:
         just = args.j
 
-    headers = core.fileparser.HEADERS
-    headers.append('centered')
+    # check block environment speciality
 
-    try:
-        pt = block.prev.type()
-    except:
-        pt = None
+    spec = block_is_centered(block) or block_is_header(block)
+    next_spec = block_is_centered(block.next, True) or block_is_header(block.next, True)
 
-    t = block.type()
+    empties = '\n'*block.emptyafter*(spec or next_spec)
 
-    try:
-        nt = block.next.type()
-    except:
-        nt = None
+    if block_is_centered(block):
+        return centerize(block.raw_content.strip(), args.m) + empties
 
-    if margin in block.centered_at() and block.leftmargin():
-        centered = True
-    else:
-        centered = False    
+    if block_is_header(block):
+        return block.raw_content + empties
 
-    if t in headers or nt in headers or args.i==0 or centered:
-        empties = True
-    else:
-        empties = False
+    if block_is_header(block.prev, True) and args.nofirstind:
+        return reform_par(block.raw_content, hyph_lang, margin=args.m, indent=0, justify=just) + empties
 
-    if centered:
-        return centerize(block.raw_content.strip(), args.m) + '\n'*b.emptyafter*empties
+    return reform_par(block.raw_content, hyph_lang, margin=args.m, indent=args.i, justify=just) + empties
 
-    if t in headers:
-        return block.raw_content + '\n'*b.emptyafter*empties
+def main(first_block):
+    from gntools.filepath import backup, writeout
     
-    if pt in headers and args.nofirstind:
-        return reform_par(block.raw_content, hyph_lang, margin=args.m, indent=0, justify=just) + '\n'*b.emptyafter*empties
+    b = first_block
 
-    return reform_par(block.raw_content, hyph_lang, margin=args.m, indent=args.i, justify=just) + '\n'*b.emptyafter*empties
+    if not args.M:
+        wm = core.fileparser.wrapmargin(first_block)
+    else:
+        wm = args.M
 
-if args.stline==1 and args.enline==0:
-    first_block = core.fileparser.ll_blocks(core.args.infile)
-else:
-    if args.enline==0:
-        args.enline=len(core.args.infile.splitlines())
+    if args.o:
+        backup(args.o)
 
-    first_block = core.fileparser.ll_blocks(content(core.args.infile, args.stline, args.enline))
-    
-wm = core.fileparser.wrapmargin(first_block)
-
-b = first_block
-
-if args.o:
-    backup(args.o)
-
-while b.next:
+    while b.next:
+        writeout(reformat(b, margin=wm) + '\n', args.o)
+        b = b.next
     writeout(reformat(b, margin=wm) + '\n', args.o)
-    b = b.next
-writeout(reformat(b, margin=wm) + '\n', args.o)
