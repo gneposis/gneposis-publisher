@@ -49,15 +49,15 @@ def reformat(block, margin=None):
     empties = '\n'*block.emptyafter*(spec or next_spec)
 
     if block_is_centered(block):
-        return centerize(block.raw_content.strip(), args.m) + empties
+        return centerize(block.raw_content().strip(), args.m) + empties
 
     if block_is_header(block):
-        return block.raw_content + empties
+        return block.raw_content() + empties
 
     if block_is_header(block.prev, True) and args.nofirstind:
-        return reform_par(block.raw_content, hyph_lang, margin=args.m, indent=0, justify=just) + empties
+        return reform_par(block.raw_content(), hyph_lang, margin=args.m, indent=0, justify=just) + empties
 
-    return reform_par(block.raw_content, hyph_lang, margin=args.m, indent=args.i, justify=just) + empties
+    return reform_par(block.raw_content(), hyph_lang, margin=args.m, indent=args.i, justify=just) + empties
 
 def main(first_block):
     from gntools.filepath import backup, writeout

@@ -20,6 +20,7 @@ import random
 PARAGRAPH_MAXINDENT = 8
 PARAGRAPH_BODYINDENT = 0
 HUGE_VALUE = 10000
+MAX_INDENT = 8
 
 # temporary constant for Hyphenation allowed
 HYPH = False
@@ -37,8 +38,6 @@ class Block():
         self.loc = loc
         self.emptyafter = emptyafter
         self.l_lines = l_lines
-
-        self.raw_content = ' '.join(self.l_lines)
 
     def leftmargin(self):
         '''Returns the column number of the left margin'''
@@ -84,10 +83,68 @@ class Block():
         if len(self.l_lines) == 1:
 
             for i in HEADERS:
-                if self.raw_content.lower().find(i) > -1:
+                if self.raw_content().lower().find(i) > -1:
                     return i
 
         return 'paragraph'
+
+    def raw_content(self):
+        c = ' '.join(self.l_lines)
+        c = c.replace('\u2010 ','') # remove hyphens
+        while c.find('  ') > -1:
+            c = c.replace('  ',' ') # trim double spaces
+        return c.strip()
+
+    def join_subblocks(self):
+        '''Joins subblocks to the main linked list of blocks'''
+        def indents():
+            '''Returns the line indices in l_lines which are indented'''
+            # for more sophisticated method we can check if line is longer than margin and ensure zero identification in next line
+            result = []
+            for i in range(len(self.l_lines)):
+                l = self.l_lines[i]
+                if (0 < len(l) - len(l.lstrip()) <= MAX_INDENT):
+                    result.append(i)
+            return result
+        '''Function to split indented blocks'''
+
+        indices = indents()
+        try:
+            if indices[0] != 0:
+                indices.insert(0,0) # we ensure we start from the beginning
+        except:
+            return None
+        
+        prev_subblock = None
+        for i in range(len(indices)):
+            st_i = indices[i]
+            last = False
+            try:
+                en_i = indices[i+1]
+            except:
+                en_i = len(self.l_lines)
+                last = True
+
+            subblock = Block((self.loc[0] + st_i + 1, self.loc[0] + en_i), self.emptyafter*last, l_lines=self.l_lines[st_i:en_i])
+
+            if not prev_subblock: # ergo it will be the first one
+
+                self.prev.next = subblock # this gonna join it to the main blocks
+                subblock.prev = self.prev
+
+                subblock.next = None
+                first_subblock = subblock
+            else:
+                prev_subblock.next = subblock
+                subblock.prev = prev_subblock
+            
+            prev_subblock = subblock    
+
+            if last: #for last subblock
+                subblock.next = self.next
+                if self.next:
+                    self.next.prev = subblock # this gonna join it to the main blocks
+                    
 
 def ll_blocks(text):
     '''Generates a linked list of blocks and returns the last one.
@@ -148,7 +205,13 @@ def ll_blocks(text):
         last_block = block
     
         i = block.loc[1] + block.emptyafter
-           
+
+    block = first_block
+    while block.next:
+        block.join_subblocks()
+        block = block.next
+    block.join_subblocks()
+                  
     return first_block
 
 def wrapmargin(first_block):
