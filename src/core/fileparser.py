@@ -10,6 +10,7 @@ from hyphen import Hyphenator, dict_info
 
 from gntools.debug import log
 from gntools.texts.utf import worthypart_utf
+from gntools.texts.typesetting import reform_par
 from gntools.lists import intersection_of_two_lists
 
 
@@ -26,14 +27,14 @@ MAX_INDENT = 8
 HYPH = False
 lang = 'en_GB'
 HEADERS = ['chapter']
+BY = 'by'
 
 class EmptyLineForBlockError(ValueError): pass
-
 
 class Block():
     # loc: tuple of start and end line number (st, en)
     # loc = (-1,0) is for the first block containing the empty lines at
-    #     the beginning of the document in its self.emptyafter 
+    #     the beginning of the document in its self.emptyafter
     def __init__(self, loc, emptyafter, l_lines=None):
         self.loc = loc
         self.emptyafter = emptyafter
@@ -54,16 +55,16 @@ class Block():
         return m
 
     def centered_at(self):
-        '''Returns the rightmargin value where 
+        '''Returns the rightmargin value where
         the Block would be centered.'''
         # example "...b" returns {7}
         #         "...bl" returns {7,8}
         c_i = set()
         for i in self.l_lines:
-            c_ii = set() 
+            c_ii = set()
             m = len(i) - len(i.lstrip())
             l_l = len(i.strip())
-            
+
             if l_l % 2 == 0:
                 # if content length is even value
                 c_ii.add(l_l + 2*m -1)
@@ -80,11 +81,57 @@ class Block():
 
     def type(self, margin=None):
         '''Returns the type of the block'''
+
+        def byed(block):
+            '''Return True if a block raw_content has by at the beginning'''
+            if block.raw_content().lower().find(BY) == 0:
+                return True
+            return False
+
+        def header(block):
+            '''Returns header if header type in content'''
+            for i in HEADERS:
+                if block.raw_content().lower().find(i) > -1:
+                    return i
+            return False
+
+        def nr(block):
+            '''Returns block number for the first three blocks'''
+            if not self.prev:
+                return None
+            elif not self.prev.prev:
+                return 1
+            elif not self.prev.prev.prev:
+                return 2
+            elif not self.prev.prev.prev.prev:
+                return 3
+            return None
+
         if len(self.l_lines) == 1:
 
-            for i in HEADERS:
-                if self.raw_content().lower().find(i) > -1:
-                    return i
+            header = header(self)
+            nr = nr(self)
+
+            if nr == 1:
+                if byed(self.next) or byed(self.next.next):
+                    return 'title'
+                else:
+                    return 'author'
+            elif nr == 2:
+                if byed(self):
+                    return 'author'
+                elif self.prev.type() == 'author':
+                    return 'title'
+                elif self.prev.type() == 'title':
+                    return 'subtitle'
+            elif nr == 3:
+                if byed(self):
+                    return 'author'
+                elif self.prev.type() == 'title' and not header:
+                    return 'subtitle'
+
+            if header:
+                return header
 
         return 'paragraph'
 
@@ -94,6 +141,9 @@ class Block():
         while c.find('  ') > -1:
             c = c.replace('  ',' ') # trim double spaces
         return c.strip()
+
+    def reformat(self, margin=args.m, indent=args.i, hyphlang=args.l, justify=args.j):
+        return reform_par(self.raw_content(), hyphlang, indent, justify, margin)
 
     def join_subblocks(self):
         '''Joins subblocks to the main linked list of blocks'''
@@ -114,7 +164,7 @@ class Block():
                 indices.insert(0,0) # we ensure we start from the beginning
         except:
             return None
-        
+
         prev_subblock = None
         for i in range(len(indices)):
             st_i = indices[i]
@@ -137,14 +187,14 @@ class Block():
             else:
                 prev_subblock.next = subblock
                 subblock.prev = prev_subblock
-            
-            prev_subblock = subblock    
+
+            prev_subblock = subblock
 
             if last: #for last subblock
                 subblock.next = self.next
+                subblock.emptyafter = self.emptyafter
                 if self.next:
                     self.next.prev = subblock # this gonna join it to the main blocks
-                    
 
 def ll_blocks(text):
     '''Generates a linked list of blocks and returns the last one.
@@ -155,13 +205,13 @@ def ll_blocks(text):
         If location is not empty, return 0.'''
         c = 0
         # here this function uses its parent variable <l>
-        while not l[i+c]:
+        while not l[i+c] or l[i+c] == '\ufeff':
             c += 1
         return c
-        
+
     def get_block(i):
         '''Returns the Block starting from line index <i>.'''
-        
+
         # here this function uses its parent variable <l>
         if not l[i]:
             raise EmptyLineForBlockError('Start line of a Block must be nonempty: l{0}.'.format(i+1))
@@ -180,12 +230,12 @@ def ll_blocks(text):
         #log(' '.join(l[i:j])+'\n', False)
         return Block((i,j), c_e, l_lines=l[i:j])
 
-         
+
     l = text.splitlines()
     i = 0
 
     c_e = count_empty(i)
-    
+
     # first block is always only to store empty lines at the beginning of text
     first_block = Block((-1,0), c_e, l_lines=[''])
     first_block.prev = None
@@ -194,7 +244,7 @@ def ll_blocks(text):
     i += c_e
 
     while i < len(l) - 1:
-    
+
         log(str(args.stline + i)+' ')
 
         block = get_block(i)
@@ -203,7 +253,7 @@ def ll_blocks(text):
         block.prev = last_block
         block.next = None
         last_block = block
-    
+
         i = block.loc[1] + block.emptyafter
 
     block = first_block
@@ -211,7 +261,7 @@ def ll_blocks(text):
         block.join_subblocks()
         block = block.next
     block.join_subblocks()
-                  
+
     return first_block
 
 def wrapmargin(first_block):
@@ -221,7 +271,7 @@ def wrapmargin(first_block):
         m = x.rightmargin()
         ensure_index(m, a, val=0)
         a[m] += 1
-        
+
     a = []
     x = first_block.next
 
@@ -231,9 +281,6 @@ def wrapmargin(first_block):
     add_margin()
 
     return a.index(max(a))
-
-
-
 
 if __name__ == '__main__':
     pass
