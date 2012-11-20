@@ -17,11 +17,13 @@ import sys
 from gntools.lines import content
 
 import core.fileparser
+import formats
 from core.args import args, infile
-
 first_block = core.fileparser.ll_blocks(content(infile, args.stline, args.enline))
+formats._main(first_block)
 
-if args.mode == 'plain':
-    from formats.plain import main
-
-main(first_block)
+a = []
+b = first_block
+while b.next:
+    a.append(b)
+    b = b.next

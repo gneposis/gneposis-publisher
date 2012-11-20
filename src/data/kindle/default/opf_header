@@ -1,1 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
+<package unique-identifier="UID">
+<metadata>
+<dc-metadata xmlns:dc="http://purl.org/metadata/dublin_core" xmlns:oebpackage="http://openebook.org/namespaces/oeb-package/1.0/">

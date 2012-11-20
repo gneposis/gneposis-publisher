@@ -1,33 +1,9 @@
 import core.fileparser
 from core.args import args
+from core.blockparser import block_is_centered, block_is_header
 
 def reformat(block, margin=None):
     from gntools.texts.typesetting import centerize, reform_par
-
-    def block_is_centered(block, _try = False):
-        if block:
-            if _try:
-                try:
-                    if margin in block.centered_at() and block.leftmargin():
-                        return True
-                except:
-                        return False
-            if margin in block.centered_at() and block.leftmargin():
-                return True
-        return False
-
-    def block_is_header(block, _try = False):
-        if block:
-            headers = core.fileparser.HEADERS
-            if _try:
-                try:
-                    if block.type() in headers:
-                        return True
-                except:
-                        return False
-            if block.type() in headers:
-                return True
-        return False
 
     # check arguments
 
@@ -43,23 +19,23 @@ def reformat(block, margin=None):
 
     # check block environment speciality
 
-    spec = block_is_centered(block) or block_is_header(block)
-    next_spec = block_is_centered(block.next, True) or block_is_header(block.next, True)
+    spec = block_is_centered(block, margin=margin) or block_is_header(block)
+    next_spec = block_is_centered(block.next, _try = True, margin=margin) or block_is_header(block.next, True)
 
-    empties = '\n'*block.emptyafter*(spec or next_spec)
+    empties = '\n'*block.emptyafter*(spec or next_spec or args.i == 0)
 
-    if block_is_centered(block):
+    if block_is_centered(block, margin=margin):
         return centerize(block.raw_content().strip(), args.m) + empties
 
     if block_is_header(block):
         return block.raw_content() + empties
 
     if block_is_header(block.prev, True) and args.nofirstind:
-        return reform_par(block.raw_content(), hyph_lang, margin=args.m, indent=0, justify=just) + empties
+        return reform_par(block.raw_content(), args.l, 0, args.j, args.m) + empties
 
-    return reform_par(block.raw_content(), hyph_lang, margin=args.m, indent=args.i, justify=just) + empties
+    return reform_par(block.raw_content(), args.l, args.i, args.j, args.m) + empties
 
-def main(first_block):
+def _main(first_block):
     from gntools.filepath import backup, writeout
     
     b = first_block

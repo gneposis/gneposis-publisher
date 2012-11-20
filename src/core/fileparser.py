@@ -1,21 +1,14 @@
-import re
+import random
+#import re
 from math import ceil
-
-from core.args import args
-
-from gntools.lists import ensure_index
-
 #dependency: PyHyphen
 from hyphen import Hyphenator, dict_info
 
-from gntools.debug import log
 from gntools.texts.utf import worthypart_utf
-from gntools.texts.typesetting import reform_par
-from gntools.lists import intersection_of_two_lists
+from gntools.lists import ensure_index, intersection_of_two_lists
 
-
-### test import
-import random
+from core.args import args
+from core.meta import base_constants
 
 # TODO: Later we want to implement paragraph blocks and get rid or these
 PARAGRAPH_MAXINDENT = 8
@@ -24,8 +17,6 @@ HUGE_VALUE = 10000
 MAX_INDENT = 8
 
 # temporary constant for Hyphenation allowed
-HYPH = False
-lang = 'en_GB'
 HEADERS = ['chapter']
 BY = 'by'
 
@@ -39,6 +30,13 @@ class Block():
         self.loc = loc
         self.emptyafter = emptyafter
         self.l_lines = l_lines
+
+        self.prev = None
+        self.next = None
+        self.dlink = None
+        self.ulink = None
+        self.llink = None
+        self.rlink = None
 
     def leftmargin(self):
         '''Returns the column number of the left margin'''
@@ -84,14 +82,14 @@ class Block():
 
         def byed(block):
             '''Return True if a block raw_content has by at the beginning'''
-            if block.raw_content().lower().find(BY) == 0:
+            if block.raw_content().lower().find(base_constants['by']) == 0:
                 return True
             return False
 
         def header(block):
             '''Returns header if header type in content'''
             for i in HEADERS:
-                if block.raw_content().lower().find(i) > -1:
+                if block.raw_content().lower().find(base_constants[i]) > -1:
                     return i
             return False
 
@@ -130,6 +128,9 @@ class Block():
                 elif self.prev.type() == 'title' and not header:
                     return 'subtitle'
 
+            if self.raw_content() == '***':
+                return 'asterism'
+
             if header:
                 return header
 
@@ -141,9 +142,6 @@ class Block():
         while c.find('  ') > -1:
             c = c.replace('  ',' ') # trim double spaces
         return c.strip()
-
-    def reformat(self, margin=args.m, indent=args.i, hyphlang=args.l, justify=args.j):
-        return reform_par(self.raw_content(), hyphlang, indent, justify, margin)
 
     def join_subblocks(self):
         '''Joins subblocks to the main linked list of blocks'''
@@ -181,8 +179,6 @@ class Block():
 
                 self.prev.next = subblock # this gonna join it to the main blocks
                 subblock.prev = self.prev
-
-                subblock.next = None
                 first_subblock = subblock
             else:
                 prev_subblock.next = subblock
@@ -238,20 +234,14 @@ def ll_blocks(text):
 
     # first block is always only to store empty lines at the beginning of text
     first_block = Block((-1,0), c_e, l_lines=[''])
-    first_block.prev = None
-    first_block.next = None
     last_block = first_block
     i += c_e
 
     while i < len(l) - 1:
-
-        log(str(args.stline + i)+' ')
-
         block = get_block(i)
 
         last_block.next = block
         block.prev = last_block
-        block.next = None
         last_block = block
 
         i = block.loc[1] + block.emptyafter
@@ -263,6 +253,25 @@ def ll_blocks(text):
     block.join_subblocks()
 
     return first_block
+
+def tree_struct(first_block):
+    '''Creates a tree of the structural elements of the documents.
+    dlink points to the first element of the sublist; ulink for opposite.
+    rlink points to the next element of the same level; llink for previous element.'''
+
+    ### Right now, only for chapters
+    b = first_block
+    prev_b = None
+    while b.next:
+        if b.type() == 'chapter':
+            if prev_b:
+                prev_b.rlink = b
+                b.llink = prev_b
+            else:
+                first_block.dlink = b
+                b.ulink = first_block
+            prev_b = b
+        b = b.next
 
 def wrapmargin(first_block):
     '''Detects the wrap margin of a given text.'''

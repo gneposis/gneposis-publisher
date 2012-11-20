@@ -29,9 +29,14 @@ plaintext.add_argument('--enline', type=int, default=0, help=argparse.SUPPRESS)
 
 # create the parser for the FORMAT_KINDLEMOBI_NAME command
 kindlemobi = subparsers.add_parser(FORMAT_KINDLEMOBI_NAME, help='Converts a plain text file to Kindle MOBI format.')
-kindlemobi.add_argument('--baz', choices='XYZ', help='baz help')
-kindlemobi.add_argument('--mode', default=FORMAT_KINDLEMOBI_NAME, help=argparse.SUPPRESS)
+kindlemobi.add_argument('-l', default='en_GB', metavar='en_GB', help='Sets the language of document (default: none)')
+#kindlemobi.add_argument('-o',  help='output directory', metavar='outdir')  
 kindlemobi.add_argument('f',  help='input file', metavar='file')
+
+kindlemobi.add_argument('--mode', default=FORMAT_KINDLEMOBI_NAME, help=argparse.SUPPRESS)
+kindlemobi.add_argument('--stline', type=int, default=1, help=argparse.SUPPRESS)
+kindlemobi.add_argument('--enline', type=int, default=0, help=argparse.SUPPRESS)
+
 
 args = parser.parse_args()         
 
