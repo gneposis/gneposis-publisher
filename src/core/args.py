@@ -45,3 +45,8 @@ with open(args.f, mode="r", encoding="utf-8") as a_file:
 
 if args.enline == 0:
     args.enline = len(infile.splitlines())
+
+### !!! Attention! Temporary
+if not args.M:
+#   wm = core.fileparser.wrapmargin(first_block)
+    args.M = 66

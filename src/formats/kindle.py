@@ -96,7 +96,7 @@ def opf(first_block, style='default'):
     content += '<itemref idref="body"/>\n'
     content += '</spine>\n'
     content += '<guide>\n'
-    content += '<reference type="start" title="Go to Beginning" href="'+TITLEPAGE_FILE+'"/>\n'
+    content += '<reference type="text" title="Go to Beginning" href="'+TITLEPAGE_FILE+'"/>\n'
     content += '<reference type="toc" title="Table of Contents" href="'+TOCPAGE_FILE+'"/>\n'
     content += '</guide>\n'
     content += '</package>'

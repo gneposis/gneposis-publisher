@@ -14,16 +14,17 @@ http://sam.zoy.org/wtfpl/COPYING for more details.
 '''
 import sys
 
-from gntools.lines import content
-
-import core.fileparser
 import formats
+
 from core.args import args, infile
-first_block = core.fileparser.ll_blocks(content(infile, args.stline, args.enline))
-formats._main(first_block)
+from gntools.lines import content
+import core.fileparser
+docheader = core.fileparser.get_blocks(content(infile, args.stline, args.enline))
+
+#formats._main(docheader)
 
 a = []
-b = first_block
+b = docheader
 while b.next:
     a.append(b)
     b = b.next

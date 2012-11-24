@@ -37,18 +37,13 @@ def reformat(block, margin=None):
 
 def _main(first_block):
     from gntools.filepath import backup, writeout
-    
-    b = first_block
 
-    if not args.M:
-        wm = core.fileparser.wrapmargin(first_block)
-    else:
-        wm = args.M
+    b = first_block
 
     if args.o:
         backup(args.o)
 
     while b.next:
-        writeout(reformat(b, margin=wm) + '\n', args.o)
+        writeout(reformat(b, margin=args.M) + '\n', args.o)
         b = b.next
-    writeout(reformat(b, margin=wm) + '\n', args.o)
+    writeout(reformat(b, margin=args.M) + '\n', args.o)
