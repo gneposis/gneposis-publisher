@@ -1,6 +1,5 @@
 import core.fileparser
 from core.args import args
-from core.blockparser import block_is_centered, block_is_header
 
 def reformat(block, margin=None):
     from gntools.texts.typesetting import centerize, reform_par

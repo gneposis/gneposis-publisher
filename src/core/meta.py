@@ -1,7 +1,7 @@
 from gntools.filepath import datfile2dic, prog_path
 
 from core.args import args
-from core.blockparser import first_block
+#from core.blockparser import first_block
 
 LANG_PATH = '/data/languages'
 
@@ -18,24 +18,24 @@ def get_uid():
 
 
 
-def author():
-    '''Returns the name of the author'''
-    b = first_block
-    while b.next:
-        if b.type() == 'author':
-            find_by = b.raw_content().lower().find(base_constants['by'])
-            if find_by == 0:
-                return b.raw_content()[len(base_constants['by']):].strip()
-            return b.raw_content().strip()
-        b = b.next
-
-def title():
-    '''Returns the title'''
-    b = first_block
-    while b.next:
-        if b.type() == 'title':
-            return b.raw_content().strip()
-        b = b.next
+#def author():
+#    '''Returns the name of the author'''
+#    b = first_block
+#    while b.next:
+#        if b.type() == 'author':
+#            find_by = b.raw_content().lower().find(base_constants['by'])
+#            if find_by == 0:
+#                return b.raw_content()[len(base_constants['by']):].strip()
+#            return b.raw_content().strip()
+#        b = b.next
+#
+#def title():
+#    '''Returns the title'''
+#    b = first_block
+#    while b.next:
+#        if b.type() == 'title':
+#            return b.raw_content().strip()
+#        b = b.next
 
 def date(): # I will write it soon
     return None

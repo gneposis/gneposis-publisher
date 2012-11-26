@@ -1,14 +1,15 @@
 HEADERS = ['chapter']
 HUGE_VALUE = 10000
 
+class NonSupportedBlockError(ValueError): pass
+
 class Block:
     # loc: tuple of start and end line number (st, en)
     # loc = (-1,0) is for the first block containing the empty lines at
     #     the beginning of the document in its self.emptyafter
-    def __init__(self, l_lines):
+    def __init__(self, l_lines, emptyafter=0):
         self.l_lines = l_lines
-
-        self.emptyafter = 0
+        self.emptyafter = emptyafter
 
         self.prev = None
         self.next = None
@@ -55,91 +56,23 @@ class DocumentHeader(Block):
 class Heading(Block):
     pass
 
+class Author(Heading):
+    pass
+
 class Chapter(Heading):
     pass
 
+class Title(Heading):
+    pass
+
+class SubTitle(Title):
+    pass
+
 class Paragraph(Block):
-    pass
+    def __init__(self, l_lines, emptyafter=0, indent=0):
+        Block.__init__(self, l_lines, emptyafter)
+        self.indent = len(self.l_lines[0]) - len(self.l_lines[0].lstrip())
 
-class Separator(Block):
-    pass
-
-def get_block(l_lines, margin):
-
-    def leftmargin():
-        '''Returns the column number of the left margin'''
-        m = HUGE_VALUE
-        for i in l_lines:
-            m = min(m,len(i) - len(i.lstrip()))
-        return m
-
-    def rightmargin():
-        '''Returns the column number of the left margin'''
-        m = 0
-        for i in l_lines:
-            m = max(m,len(i))
-        return m
-
-    def centered():
-        '''Returns True if l_lines is centered.'''
-
-        # At first it calculates the rightmargin value where the Block would be centered.
-        # example "...b" gives {7}
-        #         "...bl" gives {7,8}
-        c_i = set()
-        for i in l_lines:
-            c_ii = set()
-            m = len(i) - len(i.lstrip())
-            l_l = len(i.strip())
-
-            if l_l % 2 == 0:
-                # if content length is even value
-                c_ii.add(l_l + 2*m -1)
-            else:
-                c_ii.add(l_l + 2*m +1)
-            c_ii.add(l_l + 2*m)
-
-            if not c_i:
-                c_i = c_ii
-            else:
-                c_i = c_i & c_ii
-
-        if margin in c_i and leftmargin():
-            return True
-        return False
-
-    def block_is_header(block, _try = False):
-        from core.fileparser import HEADERS
-        if block:
-            if _try:
-                try:
-                    if block.type() in HEADERS:
-                        return True
-                except:
-                        return False
-            if block.type() in HEADERS:
-                return True
-        return False
-
-    def get_header(content):
-        '''Returns header if header type in content'''
-        for i in HEADERS:
-            if block.raw_content().lower().find(base_constants[i]) > -1:
-                return i
-        return False
-
-    if centered():
-        if len(l_lines) == 1:
-            content = l_lines[0]
-            if content.lower().find('chapter') > -1:
-                block = Chapter(l_lines)
-            elif content == '***':
-                block = Separator(l_lines)
-            else:
-                block = Heading(l_lines)
-        else:
-            block = Paragraph(l_lines)
-    else:
-        block = Paragraph(l_lines)
-
-    return block
+class Break(Block):
+    def __init__(self, l_lines, emptyafter=0):
+        Block.__init__(self, l_lines, emptyafter)
