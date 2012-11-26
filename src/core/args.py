@@ -8,15 +8,15 @@ parser = argparse.ArgumentParser(description='Converts plain text to various for
 
 parser.add_argument('-v', action='version', version='0.01')
 subparsers = parser.add_subparsers(title='output formats', description='valid formats', help='Supported output formats')
-                                  
+
 # create the parser for the FORMAT_PLAINTEXT_NAME command
 plaintext = subparsers.add_parser(FORMAT_PLAINTEXT_NAME, help='Typesets a plain text file.')
 plaintext.add_argument('-i', type=int, default=2, metavar='2', help='Value of indentification of paragraphs')
 plaintext.add_argument('-j', default='deep', metavar='deep', help='Method of justification of paragraphs')
 plaintext.add_argument('-l', default='en_GB', metavar='en_GB', help='Sets the language of document (default: none)')
 plaintext.add_argument('-m', type=int, default=66, metavar='66', help='Sets the margin of the output document (default: 66)')
-plaintext.add_argument('-M', type=int, default=0, metavar='72', help='Sets the margin of the input document (autodetect by default)')
-plaintext.add_argument('-o',  help='output file', metavar='outfile')    
+plaintext.add_argument('-M', type=int, default=0, metavar='66', help='Sets the margin of the input document (autodetect by default)')
+plaintext.add_argument('-o',  help='output file', metavar='outfile')
 plaintext.add_argument('-nohyph', action='store_true', help='Turns of hyphenation')
 plaintext.add_argument('-nofirstind', action='store_true', help='Makes the first line after heading not indented')
 plaintext.add_argument('-nojust', action='store_true', help='Turns of justification')
@@ -30,7 +30,8 @@ plaintext.add_argument('--enline', type=int, default=0, help=argparse.SUPPRESS)
 # create the parser for the FORMAT_KINDLEMOBI_NAME command
 kindlemobi = subparsers.add_parser(FORMAT_KINDLEMOBI_NAME, help='Converts a plain text file to Kindle MOBI format.')
 kindlemobi.add_argument('-l', default='en_GB', metavar='en_GB', help='Sets the language of document (default: none)')
-#kindlemobi.add_argument('-o',  help='output directory', metavar='outdir')  
+kindlemobi.add_argument('-M', type=int, default=0, metavar='66', help='Sets the margin of the input document (autodetect by default)')
+#kindlemobi.add_argument('-o',  help='output directory', metavar='outdir')
 kindlemobi.add_argument('f',  help='input file', metavar='file')
 
 kindlemobi.add_argument('--mode', default=FORMAT_KINDLEMOBI_NAME, help=argparse.SUPPRESS)
@@ -38,7 +39,7 @@ kindlemobi.add_argument('--stline', type=int, default=1, help=argparse.SUPPRESS)
 kindlemobi.add_argument('--enline', type=int, default=0, help=argparse.SUPPRESS)
 
 
-args = parser.parse_args()         
+args = parser.parse_args()
 
 with open(args.f, mode="r", encoding="utf-8") as a_file:
     infile = a_file.read()

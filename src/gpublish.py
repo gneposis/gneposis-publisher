@@ -12,19 +12,17 @@ and/or modify it under the terms of the Do What The Fuck You Want
 To Public License, Version 2, as published by Sam Hocevar. See
 http://sam.zoy.org/wtfpl/COPYING for more details.
 '''
+# these imports are not necessary; i use them for debugging purposes ATM
 import sys
+from gntools.texts.utf import deutfize
 
 import formats
-
 from core.args import args, infile
 from gntools.lines import content
 import core.fileparser
-docheader = core.fileparser.get_blocks(content(infile, args.stline, args.enline))
 
-#formats._main(docheader)
+print('This is gneposis-publisher by Adam Szieberth.', end='\n\n')
 
-a = []
-b = docheader
-while b.next:
-    a.append(b)
-    b = b.next
+docheader = core.fileparser.get_blocks(content(infile, args.stline, args.enline), verbose=True)
+
+formats._main(docheader)

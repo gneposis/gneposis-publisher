@@ -1,8 +1,7 @@
 from gntools.filepath import prog_path, load_path
 
-from core.fileparser import tree_struct
-from core.blockparser import author, title, nr, block_is_header
 from core.meta import base_constants
+import core.blocks
 
 STYLES_PATH = '/data/kindle'
 HEADER = 'html_header'
@@ -17,35 +16,41 @@ TITLEPAGE_FILE = 'titlepage.html'
 TOC_NCX_FILE = 'toc.ncx'
 TOCPAGE_FILE = 'tocpage.html'
 
+
+def author(docheader):
+    return docheader.frontmatter.titlepage.dlink.raw_content()
+
+def title(docheader):
+    return docheader.frontmatter.titlepage.dlink.rlink.raw_content()
+
 def reformat_content(block):
     from gntools.texts.findrep import rep_env
     return rep_env(block.raw_content(),'_','_','<i>','</i>')
 
 def reformat(block):
-    if block.type() == 'paragraph':
-        if block_is_header(block.prev):
+    if isinstance(block, core.blocks.Paragraph):
+        if isinstance(block.prev, core.blocks.Heading):
             return '<p style="text-indent: 0em;">' + reformat_content(block) +'</p>' + '\n'
         return '<p>' + reformat_content(block) +'</p>' + '\n'
-    elif block.type() == 'asterism':
+    elif isinstance(block, core.blocks.Break):
         return '<p class="asterism">***</p>' + '\n'
-    elif block.type() == 'chapter':
-        return '<div style="page-break-after:always"></div>'+'\n'+'<a name="'+str(nr(block))+'" href="'+TOCPAGE_FILE+'#'+str(nr(block))+'"><div class="chapter">'+reformat_content(block)+'</div></a>' + '\n'
+    elif isinstance(block, core.blocks.Heading):
+        return '<div style="page-break-after:always"></div>'+'\n'+'<a name="'+block.nr()+'" href="'+TOCPAGE_FILE+'#'+block.nr()+'"><div class="chapter">'+reformat_content(block)+'</div></a>' + '\n'
     else:
         return ''
 
-def html_header(first_block, style='default'):
+def html_header(docheader, style='default'):
     with open(prog_path+STYLES_PATH+'/'+style+'/'+HEADER, mode='r') as html_header_file:
         html_header = html_header_file.read()
-    html_header = html_header.replace('AUTHOR: TITLE', author(first_block)+': '+title(first_block))
+    html_header = html_header.replace('AUTHOR: TITLE', author(docheader)+': '+title(docheader))
     return html_header
 
 def html_footer():
     return '</body>\n</html>'
 
-def body(first_block, style='default'):
-    tree_struct(first_block)
-    content = html_header(first_block, style)
-    b = first_block
+def body(docheader, style='default'):
+    content = html_header(docheader, style)
+    b = docheader
     while b.next:
         content += reformat(b)
         b = b.next
@@ -57,18 +62,18 @@ def css(style='default'):
         content = css_file.read()
     return content
 
-def opf(first_block, style='default'):
+def opf(docheader, style='default'):
     from core.args import args
     from core.meta import get_uid, date, description, isbn, sort_author
     with open(prog_path+STYLES_PATH+'/'+style+'/'+OPF_HEADER, mode='r') as opf_header_file:
         content = opf_header_file.read()
     content = content.replace('UID', get_uid())
-    content += '<dc:Title>'+title(first_block)+'</dc:Title>\n'
+    content += '<dc:Title>'+title(docheader)+'</dc:Title>\n'
     content += '<dc:Language>'+args.l+'</dc:Language>\n'
     content += '<dc:Creator '
     if sort_author():
         content += 'opf:file-as="'+sort_author()+'" '
-    content += 'opf:role="aut">'+author(first_block)+'</dc:Creator>\n'
+    content += 'opf:role="aut">'+author(docheader)+'</dc:Creator>\n'
     if date():
         content += '<dc:Date>'+date()+'</dc:Date>\n'
     if description():
@@ -102,54 +107,68 @@ def opf(first_block, style='default'):
     content += '</package>'
     return content
 
-def titlepage(first_block, style='default'):
-    content = html_header(first_block, style)
+def titlepage(docheader, style='default'):
+    content = html_header(docheader, style)
     content += '<a name="start"/>\n'
-    content += '<div class="author">'+author(first_block)+'</div>\n'
-    content += '<div class="title">'+title(first_block)+'</div>\n'
+    content += '<div class="author">'+author(docheader)+'</div>\n'
+    content += '<div class="title">'+title(docheader)+'</div>\n'
     return content + html_footer()
 
-def toc_ncx(first_block, style='default'):
+def toc_ncx(docheader, style='default'):
     from core.meta import get_uid
     with open(prog_path+STYLES_PATH+'/'+style+'/'+NCX_HEADER, mode='r') as ncx_header_file:
         content = ncx_header_file.read()
     content = content.replace('UID', get_uid())
-    content += '<docTitle><text>'+title(first_block)+'</text></docTitle>\n'
-    content += '<docAuthor><text>'+author(first_block)+'</text></docAuthor>\n'
+    content += '<docTitle><text>'+title(docheader)+'</text></docTitle>\n'
+    content += '<docAuthor><text>'+author(docheader)+'</text></docAuthor>\n'
     content += '<navMap>\n'
-    block=first_block.dlink
+    block=docheader.mainmatter.dlink
     while block.rlink:
-        content += '<navPoint class="chapter" id="'+str(nr(block))+'" playOrder="'+str(nr(block))+'"><navLabel><text>'+reformat_content(block)+'</text></navLabel><content src='+BODY_FILE+'#'+str(nr(block))+' /></navPoint>\n'
+        content += '<navPoint class="chapter" id="'+block.nr()+'" playOrder="'+block.nr()+'"><navLabel><text>'+reformat_content(block)+'</text></navLabel><content src='+BODY_FILE+'#'+block.nr()+' /></navPoint>\n'
         block = block.rlink
-    content += '<navPoint class="chapter" id="'+str(nr(block))+'" playOrder="'+str(nr(block))+'"><navLabel><text>'+reformat_content(block)+'</text></navLabel><content src='+BODY_FILE+'#'+str(nr(block))+' /></navPoint>\n'
+    content += '<navPoint class="chapter" id="'+block.nr()+'" playOrder="'+block.nr()+'"><navLabel><text>'+reformat_content(block)+'</text></navLabel><content src='+BODY_FILE+'#'+block.nr()+' /></navPoint>\n'
     return content + '</navMap>\n</ncx>'
 
-def tocpage(first_block, style='default'):
-    content = html_header(first_block, style)
+def tocpage(docheader, style='default'):
+    content = html_header(docheader, style)
     content += '<div style="page-break-after:always"></div>'+'\n'
     content += '<a name="toc"><div class="chapter">'+base_constants['toctitle']+'</div></a>\n'
-    block=first_block.dlink
+    block=docheader.mainmatter.dlink
     while block.rlink:
-        content += '<a name="'+str(nr(block))+'" href="'+BODY_FILE+'#'+str(nr(block))+'"><div class="toc1">'+reformat_content(block)+'</div></a>\n'
+        content += '<a name="'+block.nr()+'" href="'+BODY_FILE+'#'+block.nr()+'"><div class="toc1">'+reformat_content(block)+'</div></a>\n'
         block = block.rlink
-    content += '<a name="'+str(nr(block))+'" href="'+BODY_FILE+'#'+str(nr(block))+'"><div class="toc1">'+reformat_content(block)+'</div></a>\n'
+    content += '<a name="'+block.nr()+'" href="'+BODY_FILE+'#'+block.nr()+'"><div class="toc1">'+reformat_content(block)+'</div></a>\n'
     return content + html_footer()
 
-def _main(first_block):
-    with open(load_path+'/'+BODY_FILE, mode='w', encoding='utf-8') as body_file:
-        body_file.write(body(first_block))
+def _main(docheader):
+    print('\nGenerating files for kindlegen:', end='\n\n')
 
+    print('Generating {0} ... '.format(BODY_FILE), end='')
+    with open(load_path+'/'+BODY_FILE, mode='w', encoding='utf-8') as body_file:
+        body_file.write(body(docheader))
+    print('done.')
+
+    print('Generating {0} ... '.format(CSS_FILE), end='')
     with open(load_path+'/'+CSS_FILE, mode='w', encoding='utf-8') as css_file:
         css_file.write(css())
+    print('done.')
 
+    print('Generating {0} ... '.format(OPF_FILE), end='')
     with open(load_path+'/'+OPF_FILE, mode='w', encoding='utf-8') as opf_file:
-        opf_file.write(opf(first_block))
+        opf_file.write(opf(docheader))
+    print('done.')
 
+    print('Generating {0} ... '.format(TITLEPAGE_FILE), end='')
     with open(load_path+'/'+TITLEPAGE_FILE, mode='w', encoding='utf-8') as titlepage_file:
-        titlepage_file.write(titlepage(first_block))
+        titlepage_file.write(titlepage(docheader))
+    print('done.')
 
+    print('Generating {0} ... '.format(TOC_NCX_FILE), end='')
     with open(load_path+'/'+TOC_NCX_FILE, mode='w', encoding='utf-8') as ncx_file:
-        ncx_file.write(toc_ncx(first_block))
+        ncx_file.write(toc_ncx(docheader))
+    print('done.')
 
+    print('Generating {0} ... '.format(TOCPAGE_FILE), end='')
     with open(load_path+'/'+TOCPAGE_FILE, mode='w', encoding='utf-8') as toc_file:
-        toc_file.write(tocpage(first_block))
+        toc_file.write(tocpage(docheader))
+    print('done.')
